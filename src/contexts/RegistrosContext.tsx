@@ -4,9 +4,10 @@ import type { Registro } from "@/data/mockData";
 
 interface RegistrosContextType {
   registros: Registro[];
-  adicionar: (reg: Omit<Registro, "id" | "criado_em">) => Registro;
-  editar: (id: string, updates: Partial<Registro>) => void;
-  remover: (id: string) => void;
+  loading: boolean;
+  adicionar: (reg: Omit<Registro, "id" | "criado_em">) => Promise<void>;
+  editar: (id: string, updates: Partial<Registro>) => Promise<void>;
+  remover: (id: string) => Promise<void>;
 }
 
 const RegistrosContext = createContext<RegistrosContextType | null>(null);
