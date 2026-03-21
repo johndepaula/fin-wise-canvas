@@ -64,13 +64,13 @@ export default function Registros() {
     setModalOpen(true);
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const valor = parseFloat(form.valor);
     if (!valor || !form.categoria || !form.descricao || !form.data) return;
     if (editingId) {
-      editar(editingId, { tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await editar(editingId, { tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
     } else {
-      adicionar({ tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await adicionar({ tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
     }
     setModalOpen(false);
   };
