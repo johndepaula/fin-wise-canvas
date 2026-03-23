@@ -206,12 +206,16 @@ export default function Registros() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Categoria</Label>
-              <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v }))}>
+              <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v, categoriaCustom: v === "Outros" ? f.categoriaCustom : "" }))}>
                 <SelectTrigger className="bg-background border-border mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  <SelectItem value="Outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
+              {form.categoria === "Outros" && (
+                <Input placeholder="Digite a categoria" value={form.categoriaCustom} onChange={(e) => setForm((f) => ({ ...f, categoriaCustom: e.target.value }))} className="bg-background border-border mt-2" />
+              )}
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Descrição</Label>
