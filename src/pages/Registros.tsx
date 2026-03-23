@@ -68,11 +68,12 @@ export default function Registros() {
 
   const handleSave = async () => {
     const valor = parseFloat(form.valor);
-    if (!valor || !form.categoria || !form.descricao || !form.data) return;
+    const categoriaFinal = form.categoria === "Outros" ? form.categoriaCustom.trim() : form.categoria;
+    if (!valor || !categoriaFinal || !form.descricao || !form.data) return;
     if (editingId) {
-      await editar(editingId, { tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await editar(editingId, { tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
     } else {
-      await adicionar({ tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await adicionar({ tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
     }
     setModalOpen(false);
   };
