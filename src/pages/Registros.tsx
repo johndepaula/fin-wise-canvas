@@ -18,11 +18,12 @@ interface FormData {
   tipo: RegistroTipo;
   valor: string;
   categoria: string;
+  categoriaCustom: string;
   descricao: string;
   data: string;
 }
 
-const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
+const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", categoriaCustom: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
 
 export default function Registros() {
   const { registros, adicionar, editar, remover } = useRegistrosContext();
@@ -60,17 +61,19 @@ export default function Registros() {
 
   const openEdit = useCallback((r: Registro) => {
     setEditingId(r.id);
-    setForm({ tipo: r.tipo, valor: r.valor.toString(), categoria: r.categoria, descricao: r.descricao, data: r.data.slice(0, 10) });
+    const isCustom = ![...CATEGORIAS_ENTRADA, ...CATEGORIAS_SAIDA].includes(r.categoria);
+    setForm({ tipo: r.tipo, valor: r.valor.toString(), categoria: isCustom ? "Outros" : r.categoria, categoriaCustom: isCustom ? r.categoria : "", descricao: r.descricao, data: r.data.slice(0, 10) });
     setModalOpen(true);
   }, []);
 
   const handleSave = async () => {
     const valor = parseFloat(form.valor);
-    if (!valor || !form.categoria || !form.descricao || !form.data) return;
+    const categoriaFinal = form.categoria === "Outros" ? form.categoriaCustom.trim() : form.categoria;
+    if (!valor || !categoriaFinal || !form.descricao || !form.data) return;
     if (editingId) {
-      await editar(editingId, { tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await editar(editingId, { tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
     } else {
-      await adicionar({ tipo: form.tipo, valor, categoria: form.categoria, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await adicionar({ tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
     }
     setModalOpen(false);
   };
@@ -203,12 +206,16 @@ export default function Registros() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Categoria</Label>
-              <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v }))}>
+              <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v, categoriaCustom: v === "Outros" ? f.categoriaCustom : "" }))}>
                 <SelectTrigger className="bg-background border-border mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  <SelectItem value="Outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
+              {form.categoria === "Outros" && (
+                <Input placeholder="Digite a categoria" value={form.categoriaCustom} onChange={(e) => setForm((f) => ({ ...f, categoriaCustom: e.target.value }))} className="bg-background border-border mt-2" />
+              )}
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Descrição</Label>
