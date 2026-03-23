@@ -18,11 +18,12 @@ interface FormData {
   tipo: RegistroTipo;
   valor: string;
   categoria: string;
+  categoriaCustom: string;
   descricao: string;
   data: string;
 }
 
-const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
+const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", categoriaCustom: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
 
 export default function Registros() {
   const { registros, adicionar, editar, remover } = useRegistrosContext();
