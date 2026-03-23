@@ -61,7 +61,8 @@ export default function Registros() {
 
   const openEdit = useCallback((r: Registro) => {
     setEditingId(r.id);
-    setForm({ tipo: r.tipo, valor: r.valor.toString(), categoria: r.categoria, descricao: r.descricao, data: r.data.slice(0, 10) });
+    const isCustom = ![...CATEGORIAS_ENTRADA, ...CATEGORIAS_SAIDA].includes(r.categoria);
+    setForm({ tipo: r.tipo, valor: r.valor.toString(), categoria: isCustom ? "Outros" : r.categoria, categoriaCustom: isCustom ? r.categoria : "", descricao: r.descricao, data: r.data.slice(0, 10) });
     setModalOpen(true);
   }, []);
 
