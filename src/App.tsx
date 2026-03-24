@@ -7,6 +7,8 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { RegistrosProvider } from "@/contexts/RegistrosContext";
 import Dashboard from "./pages/Dashboard";
 import Registros from "./pages/Registros";
+import Contas from "./pages/Contas";
+import Configuracoes from "./pages/Configuracoes";
 import Perfil from "./pages/Perfil";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -32,6 +34,8 @@ function ProtectedRoutes() {
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/registros" element={<Registros />} />
+          <Route path="/contas" element={<Contas />} />
+          <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

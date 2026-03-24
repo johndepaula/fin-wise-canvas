@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      bills: {
+        Row: {
+          account_type: string
+          amount: number
+          amount_paid: number
+          created_at: string
+          due_date: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          account_type: string
+          amount: number
+          amount_paid?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          account_type?: string
+          amount?: number
+          amount_paid?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      custom_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       financial_records: {
         Row: {
           categoria: string
@@ -44,6 +95,78 @@ export type Database = {
           tipo?: string
           user_id?: string
           valor?: number
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+        }
+        Relationships: []
+      }
+      user_inputs_history: {
+        Row: {
+          created_at: string
+          id: string
+          type: string
+          user_id: string
+          value: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          type: string
+          user_id: string
+          value: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          type?: string
+          user_id?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      user_settings: {
+        Row: {
+          background_color: string | null
+          chart_color: string | null
+          chart_line_style: string | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          background_color?: string | null
+          chart_color?: string | null
+          chart_line_style?: string | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          background_color?: string | null
+          chart_color?: string | null
+          chart_line_style?: string | null
+          created_at?: string
+          id?: string
+          user_id?: string
         }
         Relationships: []
       }
