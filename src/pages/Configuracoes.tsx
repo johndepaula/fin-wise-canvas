@@ -1,21 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function Configuracoes() {
-  const { settings, save } = useUserSettings();
+  const { settings, loading, save } = useUserSettings();
   const [form, setForm] = useState(settings);
 
-  // Sync when settings load
-  const [synced, setSynced] = useState(false);
-  if (!synced && settings.chart_color !== "#8B5CF6" || !synced && settings.chart_line_style !== "monotone") {
-    setForm(settings);
-    setSynced(true);
-  }
+  useEffect(() => {
+    if (!loading) setForm(settings);
+  }, [loading, settings]);
 
   const handleSave = () => save(form);
 
