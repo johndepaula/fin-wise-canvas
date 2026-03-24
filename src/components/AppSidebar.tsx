@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, User, LogOut } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +18,7 @@ import { Separator } from "@/components/ui/separator";
 const mainItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Meus Registros", url: "/registros", icon: Receipt },
+  { title: "Contas", url: "/contas", icon: Wallet },
 ];
 
 export function AppSidebar() {
@@ -69,6 +70,18 @@ export function AppSidebar() {
       <SidebarFooter className="pb-4">
         <Separator className="mb-3 bg-border/50" />
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to="/configuracoes"
+                className="hover:bg-accent/60 transition-colors duration-150"
+                activeClassName="bg-accent text-foreground font-medium"
+              >
+                <Settings className="mr-2.5 h-4 w-4" />
+                {!collapsed && <span>Configurações</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <NavLink
