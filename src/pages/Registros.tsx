@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { Registro, RegistroTipo, CATEGORIAS_ENTRADA, CATEGORIAS_SAIDA, TODAS_CATEGORIAS } from "@/data/mockData";
+import { useCustomCategories } from "@/hooks/useCustomCategories";
+import { useInputHistory } from "@/hooks/useInputHistory";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,8 +27,23 @@ interface FormData {
 
 const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", categoriaCustom: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
 
+function SuggestionDropdown({ suggestions, onSelect }: { suggestions: string[]; onSelect: (v: string) => void }) {
+  if (!suggestions.length) return null;
+  return (
+    <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-32 overflow-y-auto">
+      {suggestions.map((s) => (
+        <button key={s} type="button" className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent transition-colors" onClick={() => onSelect(s)}>
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Registros() {
   const { registros, adicionar, editar, remover } = useRegistrosContext();
+  const { categories: customCats, add: addCustomCat } = useCustomCategories();
+  const descHistory = useInputHistory("descricao");
   const [tipoFiltro, setTipoFiltro] = useState("todos");
   const [catFiltro, setCatFiltro] = useState("todas");
   const [busca, setBusca] = useState("");
@@ -35,6 +52,9 @@ export default function Registros() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
+  const [descSuggestions, setDescSuggestions] = useState<string[]>([]);
+
+  const allCategorias = useMemo(() => [...TODAS_CATEGORIAS, ...customCats.filter((c) => !TODAS_CATEGORIAS.includes(c))], [customCats]);
 
   const filtrados = useMemo(() => {
     let list = [...registros];
@@ -56,6 +76,7 @@ export default function Registros() {
   const openNew = useCallback(() => {
     setEditingId(null);
     setForm(emptyForm);
+    setDescSuggestions([]);
     setModalOpen(true);
   }, []);
 
@@ -63,6 +84,7 @@ export default function Registros() {
     setEditingId(r.id);
     const isCustom = ![...CATEGORIAS_ENTRADA, ...CATEGORIAS_SAIDA].includes(r.categoria);
     setForm({ tipo: r.tipo, valor: r.valor.toString(), categoria: isCustom ? "Outros" : r.categoria, categoriaCustom: isCustom ? r.categoria : "", descricao: r.descricao, data: r.data.slice(0, 10) });
+    setDescSuggestions([]);
     setModalOpen(true);
   }, []);
 
@@ -70,6 +92,15 @@ export default function Registros() {
     const valor = parseFloat(form.valor);
     const categoriaFinal = form.categoria === "Outros" ? form.categoriaCustom.trim() : form.categoria;
     if (!valor || !categoriaFinal || !form.descricao || !form.data) return;
+
+    // Persist custom category
+    if (form.categoria === "Outros" && categoriaFinal) {
+      await addCustomCat(categoriaFinal);
+    }
+
+    // Save to input history
+    await descHistory.save(form.descricao);
+
     if (editingId) {
       await editar(editingId, { tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
     } else {
@@ -79,6 +110,12 @@ export default function Registros() {
   };
 
   const categorias = form.tipo === "entrada" ? CATEGORIAS_ENTRADA : CATEGORIAS_SAIDA;
+  const categoriasComCustom = [...categorias, ...customCats.filter((c) => !categorias.includes(c))];
+
+  const handleDescChange = (value: string) => {
+    setForm((f) => ({ ...f, descricao: value }));
+    setDescSuggestions(value.length >= 2 ? descHistory.getSuggestions(value) : []);
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -123,7 +160,7 @@ export default function Registros() {
           <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todas">Todas categorias</SelectItem>
-            {TODAS_CATEGORIAS.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+            {allCategorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -209,7 +246,7 @@ export default function Registros() {
               <Select value={form.categoria} onValueChange={(v) => setForm((f) => ({ ...f, categoria: v, categoriaCustom: v === "Outros" ? f.categoriaCustom : "" }))}>
                 <SelectTrigger className="bg-background border-border mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
-                  {categorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  {categoriasComCustom.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   <SelectItem value="Outros">Outros</SelectItem>
                 </SelectContent>
               </Select>
@@ -217,9 +254,16 @@ export default function Registros() {
                 <Input placeholder="Digite a categoria" value={form.categoriaCustom} onChange={(e) => setForm((f) => ({ ...f, categoriaCustom: e.target.value }))} className="bg-background border-border mt-2" />
               )}
             </div>
-            <div>
+            <div className="relative">
               <Label className="text-xs text-muted-foreground">Descrição</Label>
-              <Input placeholder="Ex: Supermercado" value={form.descricao} onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))} className="bg-background border-border mt-1" />
+              <Input
+                placeholder="Ex: Supermercado"
+                value={form.descricao}
+                onChange={(e) => handleDescChange(e.target.value)}
+                onBlur={() => setTimeout(() => setDescSuggestions([]), 150)}
+                className="bg-background border-border mt-1"
+              />
+              <SuggestionDropdown suggestions={descSuggestions} onSelect={(v) => { setForm((f) => ({ ...f, descricao: v })); setDescSuggestions([]); }} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Data</Label>
