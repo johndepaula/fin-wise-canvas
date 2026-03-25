@@ -7,12 +7,14 @@ export interface UserSettings {
   chart_color: string;
   background_color: string;
   chart_line_style: string;
+  category_chart_color: string;
 }
 
 const DEFAULTS: UserSettings = {
   chart_color: "#8B5CF6",
   background_color: "#1A1F2C",
   chart_line_style: "monotone",
+  category_chart_color: "#3B82F6",
 };
 
 export function useUserSettings() {
@@ -28,6 +30,7 @@ export function useUserSettings() {
           chart_color: data.chart_color || DEFAULTS.chart_color,
           background_color: data.background_color || DEFAULTS.background_color,
           chart_line_style: data.chart_line_style || DEFAULTS.chart_line_style,
+          category_chart_color: (data as any).category_chart_color || DEFAULTS.category_chart_color,
         });
       }
       setLoading(false);
@@ -38,7 +41,7 @@ export function useUserSettings() {
     if (!user) return;
     const newSettings = { ...settings, ...updates };
     const { error } = await supabase.from("user_settings")
-      .upsert({ user_id: user.id, ...newSettings }, { onConflict: "user_id" });
+      .upsert({ user_id: user.id, ...newSettings } as any, { onConflict: "user_id" });
     if (error) {
       toast({ title: "Erro ao salvar configurações", description: error.message, variant: "destructive" });
     } else {

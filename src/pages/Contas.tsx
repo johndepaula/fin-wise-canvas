@@ -1,5 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useBills, Bill } from "@/hooks/useBills";
+import { useInputHistory } from "@/hooks/useInputHistory";
+import { SuggestionDropdown } from "@/components/SuggestionDropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
 
 interface FormData {
@@ -31,10 +34,12 @@ function getDueStatus(due_date: string) {
 
 export default function Contas() {
   const { bills, loading, add, update, remove } = useBills();
+  const accountHistory = useInputHistory("tipo_conta");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
+  const [accountSuggestions, setAccountSuggestions] = useState<string[]>([]);
 
   const totals = useMemo(() => {
     const total = bills.reduce((s, b) => s + b.amount, 0);
@@ -45,19 +50,29 @@ export default function Contas() {
   const openNew = useCallback(() => {
     setEditingId(null);
     setForm(emptyForm);
+    setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
 
   const openEdit = useCallback((b: Bill) => {
     setEditingId(b.id);
     setForm({ account_type: b.account_type, due_date: b.due_date, amount: b.amount.toString(), amount_paid: b.amount_paid.toString() });
+    setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
+
+  const handleAccountTypeChange = (value: string) => {
+    setForm((f) => ({ ...f, account_type: value }));
+    setAccountSuggestions(value.length >= 2 ? accountHistory.getSuggestions(value) : []);
+  };
 
   const handleSave = async () => {
     const amount = parseFloat(form.amount);
     const amount_paid = parseFloat(form.amount_paid) || 0;
     if (!form.account_type || !form.due_date || !amount) return;
+
+    await accountHistory.save(form.account_type);
+
     if (editingId) {
       await update(editingId, { account_type: form.account_type, due_date: form.due_date, amount, amount_paid });
     } else {
@@ -67,6 +82,18 @@ export default function Contas() {
   };
 
   const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+  if (loading) {
+    return (
+      <div className="space-y-6 max-w-7xl animate-fade-in-up">
+        <Skeleton className="h-8 w-32" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        </div>
+        <Skeleton className="h-64 rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-7xl animate-fade-in-up">
@@ -170,9 +197,16 @@ export default function Contas() {
             <DialogTitle>{editingId ? "Editar Conta" : "Nova Conta"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
-            <div>
+            <div className="relative">
               <Label className="text-xs text-muted-foreground">Tipo de Conta</Label>
-              <Input placeholder="Ex: Aluguel, Luz, Internet" value={form.account_type} onChange={(e) => setForm((f) => ({ ...f, account_type: e.target.value }))} className="bg-background border-border mt-1" />
+              <Input
+                placeholder="Ex: Aluguel, Luz, Internet"
+                value={form.account_type}
+                onChange={(e) => handleAccountTypeChange(e.target.value)}
+                onBlur={() => setTimeout(() => setAccountSuggestions([]), 150)}
+                className="bg-background border-border mt-1"
+              />
+              <SuggestionDropdown suggestions={accountSuggestions} onSelect={(v) => { setForm((f) => ({ ...f, account_type: v })); setAccountSuggestions([]); }} />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Data de Vencimento</Label>

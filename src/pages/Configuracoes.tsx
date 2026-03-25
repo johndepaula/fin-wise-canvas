@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Configuracoes() {
   const { settings, loading, save } = useUserSettings();
@@ -16,6 +17,16 @@ export default function Configuracoes() {
 
   const handleSave = () => save(form);
 
+  if (loading) {
+    return (
+      <div className="max-w-lg animate-fade-in-up">
+        <Skeleton className="h-8 w-40 mb-2" />
+        <Skeleton className="h-4 w-60 mb-8" />
+        <Skeleton className="h-72 rounded-xl" />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-lg animate-fade-in-up">
       <h1 className="text-2xl font-semibold tracking-tight mb-1">Configurações</h1>
@@ -24,7 +35,7 @@ export default function Configuracoes() {
       <Card className="bg-card border-border">
         <CardContent className="p-6 space-y-6">
           <div>
-            <Label className="text-xs text-muted-foreground">Cor dos Gráficos</Label>
+            <Label className="text-xs text-muted-foreground">Cor da Linha (Gastos por Dia)</Label>
             <div className="flex items-center gap-3 mt-2">
               <input
                 type="color"
@@ -33,6 +44,19 @@ export default function Configuracoes() {
                 className="h-10 w-10 rounded-md border border-border cursor-pointer bg-transparent"
               />
               <Input value={form.chart_color} onChange={(e) => setForm((f) => ({ ...f, chart_color: e.target.value }))} className="bg-background border-border w-32" />
+            </div>
+          </div>
+
+          <div>
+            <Label className="text-xs text-muted-foreground">Cor das Barras (Despesas por Categoria)</Label>
+            <div className="flex items-center gap-3 mt-2">
+              <input
+                type="color"
+                value={form.category_chart_color}
+                onChange={(e) => setForm((f) => ({ ...f, category_chart_color: e.target.value }))}
+                className="h-10 w-10 rounded-md border border-border cursor-pointer bg-transparent"
+              />
+              <Input value={form.category_chart_color} onChange={(e) => setForm((f) => ({ ...f, category_chart_color: e.target.value }))} className="bg-background border-border w-32" />
             </div>
           </div>
 

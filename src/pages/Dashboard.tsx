@@ -1,15 +1,18 @@
 import { useMemo, useState } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
+import { useUserSettings } from "@/hooks/useUserSettings";
 import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 
 type Periodo = "7" | "30" | "total";
 
 export default function Dashboard() {
-  const { registros } = useRegistrosContext();
+  const { registros, loading } = useRegistrosContext();
+  const { settings } = useUserSettings();
   const [periodo, setPeriodo] = useState<Periodo>("30");
   const [catFiltro, setCatFiltro] = useState("todas");
 
@@ -41,7 +44,6 @@ export default function Dashboard() {
     return { nome: entries[0][0], valor: entries[0][1] };
   }, [filtrados]);
 
-  // Chart: gastos por dia
   const gastosPorDia = useMemo(() => {
     const map: Record<string, number> = {};
     filtrados.filter((r) => r.tipo === "saida").forEach((r) => {
@@ -57,7 +59,6 @@ export default function Dashboard() {
       });
   }, [filtrados]);
 
-  // Chart: despesas por categoria
   const despesasPorCategoria = useMemo(() => {
     const map: Record<string, number> = {};
     filtrados.filter((r) => r.tipo === "saida").forEach((r) => { map[r.categoria] = (map[r.categoria] || 0) + r.valor; });
@@ -66,7 +67,6 @@ export default function Dashboard() {
       .sort((a, b) => b.valor - a.valor);
   }, [filtrados]);
 
-  // Insights
   const insights = useMemo(() => {
     const list: { icon: typeof Lightbulb; text: string }[] = [];
     if (categoriaMaiorGasto.nome !== "—") {
@@ -90,6 +90,24 @@ export default function Dashboard() {
   }, [filtrados, categoriaMaiorGasto, totalEntradas, totalSaidas, gastoMedioDiario]);
 
   const formatCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+
+  if (loading) {
+    return (
+      <div className="space-y-8 max-w-7xl">
+        <div className="animate-fade-in-up">
+          <Skeleton className="h-8 w-40 mb-2" />
+          <Skeleton className="h-4 w-60" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-[340px] rounded-xl" />
+          <Skeleton className="h-[340px] rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 max-w-7xl">
@@ -147,7 +165,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts */}
+      {/* Charts — colors from user settings */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="animate-fade-in-up stagger-3 bg-card border-border">
           <CardHeader className="pb-2">
@@ -161,7 +179,7 @@ export default function Dashboard() {
                   <XAxis dataKey="dia" tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} />
-                  <Line type="monotone" dataKey="valor" stroke="hsl(166 56% 48%)" strokeWidth={2} dot={{ fill: "hsl(166 56% 48%)", r: 3 }} activeDot={{ r: 5 }} />
+                  <Line type={settings.chart_line_style as any} dataKey="valor" stroke={settings.chart_color} strokeWidth={2} dot={{ fill: settings.chart_color, r: 3 }} activeDot={{ r: 5 }} />
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -182,7 +200,7 @@ export default function Dashboard() {
                   <XAxis dataKey="categoria" tick={{ fill: "hsl(215 12% 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} />
-                  <Bar dataKey="valor" fill="hsl(200 60% 52%)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="valor" fill={settings.category_chart_color} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
