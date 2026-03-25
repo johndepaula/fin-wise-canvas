@@ -1,96 +1,67 @@
 
 
-## Plano de Melhorias Incrementais — FinWise
+## Plano de Melhorias Avancadas — FinWise
 
-### 1. Correção: Tela preta + App.css
+### 1. Correcao definitiva da tela preta
 
-**Problema**: O `src/App.css` contém estilos legados do Vite (`#root { max-width: 1280px; padding: 2rem; text-align: center; }`) que restringem o layout e podem causar renderização incorreta no ambiente publicado.
+**Diagnostico**: O `AuthContext` ja usa `onAuthStateChange`, mas ha uma race condition: ambos `onAuthStateChange` e `getSession` chamam `setLoading(false)`. Se `onAuthStateChange` dispara primeiro com `session=null` (antes do token ser restaurado), o app renderiza `<Navigate to="/auth">` e perde o estado.
 
-**Ação**: Esvaziar `src/App.css` completamente. Verificar que `AuthContext` já usa `onAuthStateChange` corretamente (confirmado — está implementado). Garantir que o `RegistrosProvider` re-fetcha ao montar e quando `user` muda (confirmado — `useEffect` depende de `fetchRegistros` que depende de `user`).
+**Correcao**:
+- No `AuthContext`, usar uma flag `initialSessionLoaded` para so setar `loading=false` apos `getSession` resolver, ignorando o primeiro evento de `onAuthStateChange` se o `getSession` ainda nao completou.
+- Garantir que `ProtectedRoutes` mostra skeleton ate `loading === false` E dados estejam prontos.
+- No `RegistrosProvider`, adicionar skeleton/loading gate antes de renderizar children enquanto `loading` do hook estiver true.
 
----
+### 2. Configuracoes aplicadas nos graficos
 
-### 2. Novas tabelas no banco de dados (migração SQL)
+**Banco**: Adicionar coluna `category_chart_color` (text, default `'#3B82F6'`) na tabela `user_settings` via migracao.
 
-Criar 4 tabelas com RLS:
+**Hook `useUserSettings`**: Adicionar `category_chart_color` ao tipo e defaults.
 
-- **`custom_categories`**: `id`, `user_id`, `name`, `created_at` — categorias personalizadas reutilizáveis
-- **`user_inputs_history`**: `id`, `user_id`, `type` (categoria/descricao), `value`, `created_at` — histórico para autocomplete
-- **`profiles`**: `id` (ref auth.users), `display_name`, `avatar_url`, `created_at` — dados do perfil + imagem
-- **`bills`**: `id`, `user_id`, `account_type`, `due_date`, `amount`, `amount_paid` (default 0), `created_at` — contas a pagar
-- **`user_settings`**: `id`, `user_id`, `chart_color`, `background_color`, `chart_line_style`, `created_at` — personalização visual
+**Dashboard**: Importar `useUserSettings` e usar:
+- `settings.chart_color` como `stroke` do LineChart (Gastos por Dia)
+- `settings.chart_line_style` como `type` do `<Line>` (monotone/linear/step)
+- `settings.category_chart_color` como `fill` do BarChart (Despesas por Categoria)
 
-Todas com RLS: SELECT/INSERT/UPDATE/DELETE restritos a `auth.uid() = user_id`.
+Nenhuma alteracao de layout — apenas injecao de valores dinamicos nas props dos componentes Recharts.
 
-Criar trigger para auto-criar perfil no signup. Criar bucket `avatars` para upload de imagem.
+### 3. Perfil com nome + foto na sidebar
 
----
+**Sidebar**: Adicionar bloco de perfil no topo da `AppSidebar` (abaixo do logo, acima do menu), mostrando avatar (ou iniciais) e nome do usuario.
 
-### 3. Categorias editáveis com autocomplete
+**Implementacao**: Usar o hook `useProfile` existente dentro da sidebar. Exibir imagem circular pequena + display_name em uma linha compacta. Quando sidebar esta colapsada, mostrar apenas o avatar.
 
-- Hook `useCustomCategories` — busca categorias do usuário na tabela `custom_categories`
-- No modal de registro, ao selecionar "Outros" e salvar, a categoria customizada é persistida em `custom_categories`
-- Select de categoria mostra categorias padrão + customizadas do usuário
-- Input de "Outros" com sugestões baseadas no histórico
+Nenhuma alteracao no layout existente da sidebar — apenas insercao de um bloco adicional.
 
----
+### 4. Autocomplete global (Contas)
 
-### 4. Persistência inteligente (autocomplete)
+O autocomplete ja funciona em Registros (descricao). Falta aplicar em Contas:
 
-- Hook `useInputHistory` — salva e busca valores de `user_inputs_history`
-- Ao salvar um registro, grava descrição e categoria no histórico
-- Inputs de descrição e categoria mostram sugestões com base no histórico (dropdown simples)
+- Usar `useInputHistory("tipo_conta")` no `Contas.tsx`
+- Salvar `account_type` ao criar/editar conta
+- Mostrar sugestoes no input de "Tipo de Conta" com o mesmo `SuggestionDropdown`
+- Extrair `SuggestionDropdown` para componente compartilhado se necessario
 
----
+### 5. Loading states garantidos
 
-### 5. Perfil com imagem
+- Dashboard: mostrar skeleton cards enquanto `registros` estiver em loading
+- Contas: ja tem `loading` do `useBills`, adicionar skeleton na tabela
+- Perfil: mostrar skeleton enquanto profile carrega
+- Configuracoes: ja tem loading gate no `useEffect`
 
-- Criar bucket `avatars` no storage
-- Na página Perfil, adicionar upload de imagem (botão sobre o avatar atual)
-- Salvar URL no `profiles.avatar_url`
-- Exibir a imagem no avatar do perfil e na sidebar
+### Ordem de implementacao
 
----
+1. Migracao SQL: adicionar `category_chart_color` em `user_settings`
+2. Corrigir `AuthContext` (race condition do loading)
+3. Atualizar `useUserSettings` (novo campo)
+4. Aplicar settings nos graficos do Dashboard
+5. Adicionar perfil na sidebar
+6. Adicionar autocomplete em Contas
+7. Adicionar loading skeletons em Dashboard e Contas
 
-### 6. Nova página: Contas
+### Detalhes tecnicos
 
-- Adicionar rota `/contas` e item "Contas" no menu lateral (ícone `Wallet`)
-- Página com tabela de contas: tipo de conta, vencimento, valor, valor pago, restante (calculado)
-- CRUD completo via modal (mesmo padrão visual de Registros)
-- KPIs no topo: total a pagar, total pago, restante
-- Alertas visuais: badge amarelo se vence em ≤3 dias, vermelho se vencido
-- Hook `useBills` para CRUD com Supabase
-
----
-
-### 7. Nova página: Configurações
-
-- Adicionar rota `/configuracoes` e item "Configurações" no menu lateral (ícone `Settings`)
-- Campos: cor do gráfico (color picker), cor de fundo, estilo de linha
-- Hook `useUserSettings` — carrega e salva em `user_settings`
-- Aplicar configurações dinamicamente nos gráficos do Dashboard (cores e estilo de linha via props)
-
----
-
-### 8. Ordem de implementação
-
-1. Migração SQL (todas as tabelas + RLS + trigger + bucket)
-2. Limpar `App.css`
-3. Hooks de dados: `useCustomCategories`, `useInputHistory`, `useProfiles`, `useBills`, `useUserSettings`
-4. Atualizar Registros (categorias + autocomplete)
-5. Atualizar Perfil (upload de imagem)
-6. Criar página Contas
-7. Criar página Configurações
-8. Atualizar sidebar e rotas
-9. Aplicar settings no Dashboard
-
-### Detalhes técnicos
-
-- Todas as tabelas usam `user_id uuid not null` com RLS `auth.uid() = user_id`
-- Profiles usa `id uuid references auth.users(id) on delete cascade` como PK
-- Trigger `on_auth_user_created` cria profile automaticamente
-- Bucket `avatars` público para exibir imagens
-- Cálculos de contas (total, pago, restante) são feitos no frontend com `useMemo`
-- Alertas de vencimento comparados com `new Date()` no render
-- Settings aplicados via context provider global
+- Migracao: `ALTER TABLE user_settings ADD COLUMN category_chart_color text DEFAULT '#3B82F6';`
+- AuthContext: controlar loading com `useRef` para evitar race condition entre `onAuthStateChange` e `getSession`
+- Dashboard recebe cores via `useUserSettings().settings` — sem context provider global necessario, hook direto
+- SuggestionDropdown reutilizado como componente em `src/components/SuggestionDropdown.tsx`
 
