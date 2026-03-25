@@ -146,6 +146,7 @@ export type Database = {
       user_settings: {
         Row: {
           background_color: string | null
+          category_chart_color: string | null
           chart_color: string | null
           chart_line_style: string | null
           created_at: string
@@ -154,6 +155,7 @@ export type Database = {
         }
         Insert: {
           background_color?: string | null
+          category_chart_color?: string | null
           chart_color?: string | null
           chart_line_style?: string | null
           created_at?: string
@@ -162,6 +164,7 @@ export type Database = {
         }
         Update: {
           background_color?: string | null
+          category_chart_color?: string | null
           chart_color?: string | null
           chart_line_style?: string | null
           created_at?: string
