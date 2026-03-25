@@ -1,0 +1,1 @@
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS category_chart_color text DEFAULT '#3B82F6';
