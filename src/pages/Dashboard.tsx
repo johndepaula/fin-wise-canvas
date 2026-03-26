@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 
 type Periodo = "7" | "30" | "total";
 
@@ -111,7 +112,8 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
-      {/* Header + Filters */}
+      {/* Info Bar */}
+      <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
