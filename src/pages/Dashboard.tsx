@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 
 type Periodo = "7" | "30" | "total";
 
