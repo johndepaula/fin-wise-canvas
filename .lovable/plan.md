@@ -1,67 +1,77 @@
 
 
-## Plano de Melhorias Avancadas — FinWise
+## Plano — Tempo Real + Inteligencia de Contas
 
-### 1. Correcao definitiva da tela preta
+### 1. Clima por localizacao
 
-**Diagnostico**: O `AuthContext` ja usa `onAuthStateChange`, mas ha uma race condition: ambos `onAuthStateChange` e `getSession` chamam `setLoading(false)`. Se `onAuthStateChange` dispara primeiro com `session=null` (antes do token ser restaurado), o app renderiza `<Navigate to="/auth">` e perde o estado.
+**Tabela `user_location`**: `id`, `user_id`, `latitude`, `longitude`, `city`, `created_at` com RLS completo.
 
-**Correcao**:
-- No `AuthContext`, usar uma flag `initialSessionLoaded` para so setar `loading=false` apos `getSession` resolver, ignorando o primeiro evento de `onAuthStateChange` se o `getSession` ainda nao completou.
-- Garantir que `ProtectedRoutes` mostra skeleton ate `loading === false` E dados estejam prontos.
-- No `RegistrosProvider`, adicionar skeleton/loading gate antes de renderizar children enquanto `loading` do hook estiver true.
+**Abordagem para API de clima**: Usar a API gratuita Open-Meteo (nao requer API key). Buscar clima via `https://api.open-meteo.com/v1/forecast?latitude=X&longitude=Y&current_weather=true`. Cache no estado local com re-fetch a cada 10 minutos.
 
-### 2. Configuracoes aplicadas nos graficos
+**Hook `useWeather`**:
+- Solicitar `navigator.geolocation.getCurrentPosition` uma vez
+- Salvar lat/lng/city na tabela `user_location` (upsert)
+- Buscar clima da Open-Meteo e guardar no estado
+- Re-fetch a cada 10 min via `setInterval`
+- Retornar `{ temperature, condition, loading }`
 
-**Banco**: Adicionar coluna `category_chart_color` (text, default `'#3B82F6'`) na tabela `user_settings` via migracao.
+### 2. Hora e data em tempo real
 
-**Hook `useUserSettings`**: Adicionar `category_chart_color` ao tipo e defaults.
+**Hook `useClock`**: Estado local com `setInterval` a cada segundo. Retorna `{ time: "HH:mm:ss", date: "DD/MM/YYYY" }`. Sem tabela necessaria.
 
-**Dashboard**: Importar `useUserSettings` e usar:
-- `settings.chart_color` como `stroke` do LineChart (Gastos por Dia)
-- `settings.chart_line_style` como `type` do `<Line>` (monotone/linear/step)
-- `settings.category_chart_color` como `fill` do BarChart (Despesas por Categoria)
+### 3. Exibicao no Dashboard
 
-Nenhuma alteracao de layout — apenas injecao de valores dinamicos nas props dos componentes Recharts.
+Adicionar um bloco compacto no topo do Dashboard (acima dos filtros) mostrando:
+- Hora | Data | Clima (temperatura + condicao)
+- Dias restantes do mes
+- Valor por dia
 
-### 3. Perfil com nome + foto na sidebar
+Isso e uma **extensao** do Dashboard, nao uma alteracao do layout existente — apenas insercao de uma linha informativa acima do conteudo atual.
 
-**Sidebar**: Adicionar bloco de perfil no topo da `AppSidebar` (abaixo do logo, acima do menu), mostrando avatar (ou iniciais) e nome do usuario.
+### 4. Dias restantes e valor por dia
 
-**Implementacao**: Usar o hook `useProfile` existente dentro da sidebar. Exibir imagem circular pequena + display_name em uma linha compacta. Quando sidebar esta colapsada, mostrar apenas o avatar.
+**Calculos em tempo real** (no Dashboard, via `useMemo`):
+- `diasRestantes = ultimoDiaMes - hoje` (minimo 0)
+- `restanteContas = sum(amount) - sum(amount_paid)` (do `useBills`)
+- `valorPorDia = diasRestantes > 0 ? restanteContas / diasRestantes : restanteContas`
 
-Nenhuma alteracao no layout existente da sidebar — apenas insercao de um bloco adicional.
+Importar `useBills` no Dashboard para acessar os dados de contas.
 
-### 4. Autocomplete global (Contas)
+### 5. Saldo atual integrado
 
-O autocomplete ja funciona em Registros (descricao). Falta aplicar em Contas:
+Calcular `saldoAtual = totalEntradas - totalSaidas - totalContasPagas` combinando dados de `useRegistrosContext` e `useBills`.
 
-- Usar `useInputHistory("tipo_conta")` no `Contas.tsx`
-- Salvar `account_type` ao criar/editar conta
-- Mostrar sugestoes no input de "Tipo de Conta" com o mesmo `SuggestionDropdown`
-- Extrair `SuggestionDropdown` para componente compartilhado se necessario
+### 6. Migracao SQL
 
-### 5. Loading states garantidos
+```sql
+CREATE TABLE public.user_location (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  latitude double precision NOT NULL,
+  longitude double precision NOT NULL,
+  city text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(user_id)
+);
 
-- Dashboard: mostrar skeleton cards enquanto `registros` estiver em loading
-- Contas: ja tem `loading` do `useBills`, adicionar skeleton na tabela
-- Perfil: mostrar skeleton enquanto profile carrega
-- Configuracoes: ja tem loading gate no `useEffect`
+ALTER TABLE public.user_location ENABLE ROW LEVEL SECURITY;
 
-### Ordem de implementacao
+-- RLS: SELECT, INSERT, UPDATE, DELETE para auth.uid() = user_id
+```
 
-1. Migracao SQL: adicionar `category_chart_color` em `user_settings`
-2. Corrigir `AuthContext` (race condition do loading)
-3. Atualizar `useUserSettings` (novo campo)
-4. Aplicar settings nos graficos do Dashboard
-5. Adicionar perfil na sidebar
-6. Adicionar autocomplete em Contas
-7. Adicionar loading skeletons em Dashboard e Contas
+### 7. Ordem de implementacao
+
+1. Migracao SQL (tabela `user_location` + RLS)
+2. Hook `useClock` (hora/data local)
+3. Hook `useWeather` (geolocalizacao + Open-Meteo + persistir localizacao)
+4. Atualizar Dashboard: adicionar barra informativa no topo com hora, data, clima, dias restantes, valor por dia
+5. Importar `useBills` no Dashboard para calculos de contas
 
 ### Detalhes tecnicos
 
-- Migracao: `ALTER TABLE user_settings ADD COLUMN category_chart_color text DEFAULT '#3B82F6';`
-- AuthContext: controlar loading com `useRef` para evitar race condition entre `onAuthStateChange` e `getSession`
-- Dashboard recebe cores via `useUserSettings().settings` — sem context provider global necessario, hook direto
-- SuggestionDropdown reutilizado como componente em `src/components/SuggestionDropdown.tsx`
+- Open-Meteo e gratuita e sem API key — chamada direta do frontend
+- `navigator.geolocation` pede permissao uma vez; se negada, clima nao aparece
+- Conversao de weather code da Open-Meteo para texto (0=Limpo, 1-3=Parcialmente nublado, etc.)
+- `user_location` usa `UNIQUE(user_id)` para upsert com `.upsert()`
+- Todos os calculos de valor por dia sao feitos no frontend com `useMemo`, sem salvar no banco
 
