@@ -5,6 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 interface WeatherData {
   temperature: number;
   condition: string;
+  city: string;
   loading: boolean;
 }
 
@@ -25,6 +26,7 @@ export function useWeather(): WeatherData {
   const { user } = useAuth();
   const [temperature, setTemperature] = useState(0);
   const [condition, setCondition] = useState("—");
+  const [city, setCity] = useState("");
   const [loading, setLoading] = useState(true);
   const fetched = useRef(false);
 
@@ -48,14 +50,28 @@ export function useWeather(): WeatherData {
       setLoading(false);
     };
 
-    const saveAndFetch = (lat: number, lng: number) => {
+    const fetchCity = async (lat: number, lng: number): Promise<string> => {
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=pt`
+        );
+        const data = await res.json();
+        return data.address?.city || data.address?.town || data.address?.municipality || "";
+      } catch {
+        return "";
+      }
+    };
+
+    const saveAndFetch = async (lat: number, lng: number) => {
+      const cityName = await fetchCity(lat, lng);
+      setCity(cityName);
+
       supabase
-        .from("user_location" as any)
-        .upsert({ user_id: user.id, latitude: lat, longitude: lng } as any, { onConflict: "user_id" })
+        .from("user_location")
+        .upsert({ user_id: user.id, latitude: lat, longitude: lng, city: cityName }, { onConflict: "user_id" })
         .then(() => {});
       fetchWeather(lat, lng);
 
-      // Re-fetch every 10 min
       const id = setInterval(() => fetchWeather(lat, lng), 10 * 60 * 1000);
       return () => clearInterval(id);
     };
@@ -64,10 +80,10 @@ export function useWeather(): WeatherData {
       navigator.geolocation.getCurrentPosition(
         (pos) => saveAndFetch(pos.coords.latitude, pos.coords.longitude),
         async () => {
-          // Try loading saved location
-          const { data } = await supabase.from("user_location" as any).select("*").single();
+          const { data } = await supabase.from("user_location").select("*").single();
           if (data) {
-            fetchWeather((data as any).latitude, (data as any).longitude);
+            setCity(data.city || "");
+            fetchWeather(data.latitude, data.longitude);
           } else {
             setLoading(false);
           }
@@ -78,5 +94,5 @@ export function useWeather(): WeatherData {
     }
   }, [user]);
 
-  return { temperature, condition, loading };
+  return { temperature, condition, city, loading };
 }
