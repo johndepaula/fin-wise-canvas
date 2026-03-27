@@ -21,7 +21,8 @@ export function DashboardInfoBar() {
   const totalPago = bills.reduce((s, b) => s + b.amount_paid, 0);
   const restanteContas = Math.max(0, totalContas - totalPago);
 
-  const valorPorDia = diasRestantes > 0 ? Math.max(0, restanteContas - saldoReal) / diasRestantes : restanteContas;
+  const valorNecessario = Math.max(0, restanteContas - saldoReal);
+  const valorPorDia = diasRestantes > 0 ? valorNecessario / diasRestantes : valorNecessario;
 
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground animate-fade-in-up">
