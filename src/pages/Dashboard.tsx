@@ -9,34 +9,31 @@ import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-r
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 
-type Periodo = "mes" | "7" | "total";
+type Periodo = "7" | "30" | "total";
 
 export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
-  const [periodo, setPeriodo] = useState<Periodo>("mes");
-
-  const now = new Date();
-  const diasNoMes = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const [periodo, setPeriodo] = useState<Periodo>("30");
   const [catFiltro, setCatFiltro] = useState("todas");
 
   const filtrados = useMemo(() => {
-    const hoje = new Date();
+    const now = new Date();
     return registros.filter((r) => {
       if (periodo !== "total") {
-        const dias = periodo === "mes" ? diasNoMes : parseInt(periodo);
-        const diff = (hoje.getTime() - new Date(r.data).getTime()) / (1000 * 60 * 60 * 24);
+        const dias = parseInt(periodo);
+        const diff = (now.getTime() - new Date(r.data).getTime()) / (1000 * 60 * 60 * 24);
         if (diff > dias) return false;
       }
       if (catFiltro !== "todas" && r.categoria !== catFiltro) return false;
       return true;
     });
-  }, [registros, periodo, catFiltro, diasNoMes]);
+  }, [registros, periodo, catFiltro]);
 
   const totalEntradas = filtrados.filter((r) => r.tipo === "entrada").reduce((s, r) => s + r.valor, 0);
   const totalSaidas = filtrados.filter((r) => r.tipo === "saida").reduce((s, r) => s + r.valor, 0);
 
-  const diasPeriodo = periodo === "total" ? Math.max(1, Math.ceil((Date.now() - Math.min(...filtrados.map((r) => new Date(r.data).getTime()))) / (1000 * 60 * 60 * 24))) : periodo === "mes" ? diasNoMes : parseInt(periodo);
+  const diasPeriodo = periodo === "total" ? Math.max(1, Math.ceil((Date.now() - Math.min(...filtrados.map((r) => new Date(r.data).getTime()))) / (1000 * 60 * 60 * 24))) : parseInt(periodo);
   const gastoMedioDiario = totalSaidas / Math.max(1, diasPeriodo);
 
   const categoriaMaiorGasto = useMemo(() => {
@@ -129,7 +126,7 @@ export default function Dashboard() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="mes">Este mês ({diasNoMes} dias)</SelectItem>
+              <SelectItem value="30">Últimos 30 dias</SelectItem>
               <SelectItem value="total">Total</SelectItem>
             </SelectContent>
           </Select>
