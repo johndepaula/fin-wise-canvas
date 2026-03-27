@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { CommandBar } from "@/components/CommandBar";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ export function AppLayout({ children }: AppLayoutProps) {
           <header className="h-14 flex items-center border-b border-border/50 px-4 shrink-0">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground transition-colors" />
           </header>
+          <CommandBar />
           <main className="flex-1 overflow-auto p-6 lg:p-8">
             {children}
           </main>
