@@ -41,12 +41,16 @@ export function DashboardInfoBar() {
       <span className="text-border">|</span>
       <span className="flex items-center gap-1.5">
         <Calendar className="h-3.5 w-3.5" />
-        <span className="font-semibold text-foreground">{diasRestantes} dias restantes</span>
+        <span>
+          <span className="font-semibold text-foreground">{diasRestantes}</span> dias restantes
+        </span>
       </span>
       <span className="text-border">|</span>
       <span className="flex items-center gap-1.5">
         <DollarSign className="h-3.5 w-3.5" />
-        <span className="font-semibold text-foreground">R$ {valorPorDia.toFixed(2)}/dia</span>
+        <span>
+          <span className="font-semibold text-foreground">R$ {valorPorDia.toFixed(2)}</span>/dia
+        </span>
       </span>
     </div>
   );

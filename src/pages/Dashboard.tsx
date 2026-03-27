@@ -9,12 +9,13 @@ import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-r
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 
-type Periodo = "7" | "30" | "total";
+type Periodo = string;
 
 export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
-  const [periodo, setPeriodo] = useState<Periodo>("30");
+  const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
+  const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
 
   const filtrados = useMemo(() => {
@@ -126,7 +127,7 @@ export default function Dashboard() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="7">Últimos 7 dias</SelectItem>
-              <SelectItem value="30">Últimos 30 dias</SelectItem>
+              <SelectItem value={diasDoMesAtual}>Últimos {diasDoMesAtual} dias</SelectItem>
               <SelectItem value="total">Total</SelectItem>
             </SelectContent>
           </Select>
