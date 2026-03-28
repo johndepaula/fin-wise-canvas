@@ -1,36 +1,20 @@
 import { useClock } from "@/hooks/useClock";
 import { useWeather } from "@/hooks/useWeather";
 import { useBills } from "@/hooks/useBills";
-import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { Clock, MapPin, Calendar, DollarSign } from "lucide-react";
 
 export function DashboardInfoBar() {
   const { time, date, now } = useClock();
   const weather = useWeather();
   const { bills } = useBills();
-  const { registros } = useRegistrosContext();
 
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const diasRestantes = Math.max(0, lastDay - now.getDate());
 
-  const totalContas = bills.reduce((s, b) => s + (b.amount || 0), 0);
-  const totalPago = bills.reduce((s, b) => s + (b.amount_paid || 0), 0);
-  
-  const totalEntradas = registros.filter(r => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
-  const totalSaidas = registros.filter(r => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
-  
-  const saldoAtual = totalEntradas - totalSaidas;
-  const restanteContas = totalContas - totalPago;
-  
-  let restante = restanteContas - saldoAtual;
-  if (Number.isNaN(restante) || !Number.isFinite(restante) || restante < 0) {
-    restante = 0;
-  }
-  
-  let valorPorDia = diasRestantes > 0 ? restante / diasRestantes : restante;
-  if (Number.isNaN(valorPorDia) || !Number.isFinite(valorPorDia)) {
-    valorPorDia = 0;
-  }
+  const totalContas = bills.reduce((s, b) => s + b.amount, 0);
+  const totalPago = bills.reduce((s, b) => s + b.amount_paid, 0);
+  const restante = Math.max(0, totalContas - totalPago);
+  const valorPorDia = diasRestantes > 0 ? restante / diasRestantes : restante;
 
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground animate-fade-in-up">
