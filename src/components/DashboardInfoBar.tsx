@@ -13,11 +13,19 @@ export function DashboardInfoBar() {
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const diasRestantes = Math.max(0, lastDay - now.getDate());
 
-  const totalContas = bills.reduce((s, b) => s + (b.amount || 0), 0);
-  const totalPago = bills.reduce((s, b) => s + (b.amount_paid || 0), 0);
+  const isCurrentMonth = (dateString: string) => {
+    const d = new Date(dateString);
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  };
+
+  const currentMonthBills = bills.filter(b => isCurrentMonth(b.due_date));
+  const currentMonthRegistros = registros.filter(r => isCurrentMonth(r.data));
+
+  const totalContas = currentMonthBills.reduce((s, b) => s + (b.amount || 0), 0);
+  const totalPago = currentMonthBills.reduce((s, b) => s + (b.amount_paid || 0), 0);
   
-  const totalEntradas = registros.filter(r => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
-  const totalSaidas = registros.filter(r => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalEntradas = currentMonthRegistros.filter(r => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalSaidas = currentMonthRegistros.filter(r => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
   
   const saldoAtual = totalEntradas - totalSaidas;
   const restanteContas = totalContas - totalPago;
