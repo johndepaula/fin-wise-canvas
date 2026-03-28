@@ -5,7 +5,8 @@ import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb } from "lucide-react";
+import { useBills } from "@/hooks/useBills";
+import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 
@@ -14,6 +15,7 @@ type Periodo = string;
 export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
+  const { bills } = useBills();
   const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
@@ -93,6 +95,19 @@ export default function Dashboard() {
 
   const formatCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
+  const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalAPagar = bills.reduce((s, b) => s + (b.amount || 0), 0);
+  const totalPago = bills.reduce((s, b) => s + (b.amount_paid || 0), 0);
+  
+  const restanteContas = totalAPagar - totalPago;
+  const saldoBase = totalGeralEntradas - totalGeralSaidas;
+  let saldoEmConta = saldoBase - restanteContas;
+  
+  if (Number.isNaN(saldoEmConta) || !Number.isFinite(saldoEmConta)) {
+    saldoEmConta = 0;
+  }
+
   if (loading) {
     return (
       <div className="space-y-8 max-w-7xl">
@@ -148,6 +163,7 @@ export default function Dashboard() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
+          { label: "Saldo em Conta", value: formatCurrency(saldoEmConta), icon: Wallet, color: saldoEmConta >= 0 ? "text-income" : "text-expense", bg: saldoEmConta >= 0 ? "bg-income/10" : "bg-expense/10" },
           { label: "Total de Entradas", value: formatCurrency(totalEntradas), icon: TrendingUp, color: "text-income", bg: "bg-income/10" },
           { label: "Total de Saídas", value: formatCurrency(totalSaidas), icon: TrendingDown, color: "text-expense", bg: "bg-expense/10" },
           { label: "Gasto Médio Diário", value: formatCurrency(gastoMedioDiario), icon: CalendarDays, color: "text-muted-foreground", bg: "bg-muted" },
