@@ -44,9 +44,8 @@ export function AppSidebar() {
       <SidebarContent className="pt-6">
         <div className="flex items-center gap-2.5 px-4 mb-4">
           <img
-
             alt="Finplex Logo"
-            className="h-14 w-auto shrink-0 mx-0 text-base border-2 object-scale-down"
+            className="h-14 w-auto shrink-0 mx-0 object-scale-down mix-blend-multiply dark:invert"
             onError={(e) => {
               // Fallback visual case the logo isn't uploaded yet
               e.currentTarget.style.display = 'none';
