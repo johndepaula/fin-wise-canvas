@@ -44,19 +44,19 @@ export function AppSidebar() {
       <SidebarContent className="pt-6">
         <div className="flex items-center gap-2.5 px-4 mb-4">
           <img
+            src="/logo.png"
             alt="Finplex Logo"
-            className="h-14 w-auto shrink-0 mx-0 object-scale-down mix-blend-multiply dark:invert"
+            className="h-14 w-auto object-contain shrink-0"
             onError={(e) => {
               // Fallback visual case the logo isn't uploaded yet
               e.currentTarget.style.display = 'none';
               e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-14 w-14 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-2xl">F</span></div>');
-            }} src="/lovable-uploads/3482876a-9e60-4aac-a480-5d7946f1390c.png" />
+            }} />
           
           {!collapsed &&
           <span className="font-semibold text-foreground text-lg tracking-tight">​</span>
           }
         </div>
-
         {/* Profile block */}
         <div className="flex items-center gap-2.5 px-4 mb-4">
           <Avatar className="h-8 w-8 shrink-0">
