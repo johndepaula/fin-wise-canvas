@@ -15,8 +15,20 @@ export function useProfile() {
 
   const fetch = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
-    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    if (data) setProfile({ display_name: data.display_name, avatar_url: data.avatar_url });
+    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    
+    if (data) {
+      setProfile({ display_name: data.display_name, avatar_url: data.avatar_url });
+    } else {
+      // Create automatically if it doesn't exist
+      const newProfile = { id: user.id, display_name: user.email?.split("@")[0] || "Usuário", avatar_url: null };
+      const { data: insertedData } = await supabase.from("profiles").insert(newProfile).select().single();
+      if (insertedData) {
+        setProfile({ display_name: insertedData.display_name, avatar_url: insertedData.avatar_url });
+      } else {
+        setProfile({ display_name: newProfile.display_name, avatar_url: newProfile.avatar_url });
+      }
+    }
     setLoading(false);
   }, [user]);
 
@@ -24,28 +36,28 @@ export function useProfile() {
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").update(updates).eq("id", user.id);
+    const { error } = await supabase.from("profiles").upsert({ id: user.id, ...updates });
     if (error) {
       toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
+      throw error;
     } else {
-      setProfile((prev) => prev ? { ...prev, ...updates } : null);
-      toast({ title: "Perfil atualizado" });
+      setProfile((prev) => prev ? { ...prev, ...updates } : { display_name: null, avatar_url: null, ...updates });
+      toast({ title: "Sucesso", description: "Seu perfil foi salvo com sucesso." });
     }
   }, [user]);
 
   const uploadAvatar = useCallback(async (file: File) => {
-    if (!user) return;
+    if (!user) return null;
     const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar.${ext}`;
+    const path = `${user.id}/avatar_${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
-      return;
+      throw error;
     }
     const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
-    const avatar_url = `${urlData.publicUrl}?t=${Date.now()}`;
-    await updateProfile({ avatar_url });
-  }, [user, updateProfile]);
+    return `${urlData.publicUrl}?t=${Date.now()}`;
+  }, [user]);
 
   return { profile, loading, updateProfile, uploadAvatar };
 }

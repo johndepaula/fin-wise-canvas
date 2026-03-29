@@ -1,10 +1,10 @@
-import { useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { LogOut, Mail, Camera } from "lucide-react";
+import { LogOut, Mail, Camera, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
@@ -15,9 +15,25 @@ export default function Perfil() {
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
 
+  const [name, setName] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      if (!name && profile.display_name) {
+        setName(profile.display_name);
+      }
+      if (profile.avatar_url && !avatarFile) {
+        setPreviewUrl(profile.avatar_url);
+      }
+    }
+  }, [profile]);
+
   const email = user?.email ?? "";
   const initials = email.slice(0, 2).toUpperCase();
-  const displayName = profile?.display_name || email;
+  const displayNameDisplay = name || profile?.display_name || email;
 
   const handleSignOut = async () => {
     await signOut();
@@ -26,7 +42,29 @@ export default function Perfil() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) uploadAvatar(file);
+    if (file) {
+      setAvatarFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      let currentAvatarUrl = profile?.avatar_url || null;
+      if (avatarFile) {
+        const uploadedUrl = await uploadAvatar(avatarFile);
+        if (uploadedUrl) {
+           currentAvatarUrl = uploadedUrl;
+        }
+      }
+      await updateProfile({ display_name: name, avatar_url: currentAvatarUrl });
+      setAvatarFile(null); // Limpa o arquivo após o upload com sucesso
+    } catch (error) {
+      console.error("Erro ao salvar perfil:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -38,8 +76,8 @@ export default function Perfil() {
         <CardContent className="p-6 space-y-6">
           <div className="flex items-center gap-4">
             <div className="relative group">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="Avatar" className="h-14 w-14 rounded-full object-cover" />
+              {previewUrl ? (
+                <img src={previewUrl} alt="Avatar" className="h-14 w-14 rounded-full object-cover" />
               ) : (
                 <div className="h-14 w-14 rounded-full bg-primary/15 flex items-center justify-center">
                   <span className="text-primary font-semibold text-xl">{initials}</span>
@@ -54,7 +92,7 @@ export default function Perfil() {
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </div>
             <div>
-              <p className="font-medium text-lg">{displayName}</p>
+              <p className="font-medium text-lg">{displayNameDisplay}</p>
               <p className="text-muted-foreground text-sm">Conta pessoal</p>
             </div>
           </div>
@@ -65,13 +103,10 @@ export default function Perfil() {
             <div>
               <Label className="text-xs text-muted-foreground">Nome de exibição</Label>
               <Input
-                defaultValue={profile?.display_name || ""}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 placeholder="Seu nome"
                 className="bg-background border-border mt-1"
-                onBlur={(e) => {
-                  const val = e.target.value.trim();
-                  if (val !== (profile?.display_name || "")) updateProfile({ display_name: val || null });
-                }}
               />
             </div>
             <div className="flex items-center gap-3">
@@ -85,13 +120,24 @@ export default function Perfil() {
 
           <Separator className="bg-border/50" />
 
-          <Button
-            variant="outline"
-            className="w-full gap-2 text-muted-foreground hover:text-foreground"
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4" /> Sair da conta
-          </Button>
+          <div className="space-y-3">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full gap-2"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+
+            <Button
+              variant="outline"
+              className="w-full gap-2 text-muted-foreground hover:text-foreground"
+              onClick={handleSignOut}
+            >
+              <LogOut className="h-4 w-4" /> Sair da conta
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </div>
