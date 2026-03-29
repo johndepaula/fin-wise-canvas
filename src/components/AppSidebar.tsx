@@ -46,7 +46,7 @@ export function AppSidebar() {
           <img
 
             alt="Finplex Logo"
-            className="h-14 w-auto object-contain shrink-0"
+            className="h-14 w-auto object-contain shrink-0 mx-0 text-base border-2"
             onError={(e) => {
               // Fallback visual case the logo isn't uploaded yet
               e.currentTarget.style.display = 'none';
