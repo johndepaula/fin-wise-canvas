@@ -41,10 +41,17 @@ export default function Auth() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in-up">
         <div className="flex items-center gap-2.5 justify-center mb-8">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-            <span className="text-primary-foreground font-bold text-lg">F</span>
-          </div>
-          <span className="font-semibold text-foreground text-2xl tracking-tight">FinWise</span>
+          <img 
+            src="/logo.png" 
+            alt="FINPLEX Logo" 
+            className="h-10 w-10 object-contain" 
+            onError={(e) => {
+              // Fallback visual caso a logo não tenha sido enviada
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-10 w-10 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-lg">F</span></div>');
+            }}
+          />
+          <span className="font-semibold text-foreground text-2xl tracking-tight">FINPLEX</span>
         </div>
 
         <Card className="bg-card border-border">
