@@ -50,7 +50,7 @@ export function AppSidebar() {
               // Fallback visual case the logo isn't uploaded yet
               e.currentTarget.style.display = 'none';
               e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-14 w-14 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-2xl">F</span></div>');
-            }} src="/lovable-uploads/3293de14-4dbb-41e4-850d-d78807f481b4.png" />
+            }} src="/lovable-uploads/3482876a-9e60-4aac-a480-5d7946f1390c.png" />
           
           {!collapsed &&
           <span className="font-semibold text-foreground text-lg tracking-tight">​</span>
