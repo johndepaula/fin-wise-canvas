@@ -46,11 +46,11 @@ export function AppSidebar() {
           <img
             src="/logo.png"
             alt="Finplex Logo"
-            className="h-8 w-8 object-contain shrink-0"
+            className="h-14 w-auto object-contain shrink-0"
             onError={(e) => {
               // Fallback visual case the logo isn't uploaded yet
               e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-sm">F</span></div>');
+              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-14 w-14 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-2xl">F</span></div>');
             }} />
           
           {!collapsed &&

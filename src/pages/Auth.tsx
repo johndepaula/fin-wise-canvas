@@ -44,11 +44,11 @@ export default function Auth() {
           <img 
             src="/logo.png" 
             alt="FINPLEX Logo" 
-            className="h-10 w-10 object-contain" 
+            className="h-20 w-auto object-contain" 
             onError={(e) => {
               // Fallback visual caso a logo não tenha sido enviada
               e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-10 w-10 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-lg">F</span></div>');
+              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-20 w-20 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-3xl">F</span></div>');
             }}
           />
           <span className="font-semibold text-foreground text-2xl tracking-tight">FINPLEX</span>
