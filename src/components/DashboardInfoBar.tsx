@@ -4,9 +4,10 @@ import { useBills } from "@/hooks/useBills";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useBranding } from "@/hooks/useBranding";
-import { Clock, MapPin, Calendar, DollarSign, User } from "lucide-react";
+import { Clock, MapPin, Calendar, DollarSign, Pencil } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useNavigate } from "react-router-dom";
 
 export function DashboardInfoBar() {
   const { time, date, now } = useClock();
@@ -15,6 +16,7 @@ export function DashboardInfoBar() {
   const { registros } = useRegistrosContext();
   const { profile } = useProfile();
   const { branding } = useBranding();
+  const navigate = useNavigate();
 
   const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const diasRestantes = Math.max(0, lastDay - now.getDate());
@@ -45,8 +47,12 @@ export function DashboardInfoBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground animate-fade-in-up">
-      {/* Identity section: Logo + Brand name + User avatar + User name */}
-      <span className="flex items-center gap-2">
+      {/* ── Identity section: Logo + Brand name (clicável → /perfil) ── */}
+      <button
+        onClick={() => navigate("/perfil")}
+        title="Editar identidade visual"
+        className="flex items-center gap-2 group hover:opacity-80 transition-opacity cursor-pointer"
+      >
         {logoUrl ? (
           <img
             src={logoUrl}
@@ -59,11 +65,17 @@ export function DashboardInfoBar() {
           </div>
         )}
         <span className="font-semibold text-foreground text-sm">{logoName}</span>
-      </span>
+        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+      </button>
 
       <span className="text-border">|</span>
 
-      <span className="flex items-center gap-1.5">
+      {/* ── User avatar + name (clicável → /perfil) ── */}
+      <button
+        onClick={() => navigate("/perfil")}
+        title="Editar perfil"
+        className="flex items-center gap-1.5 group hover:opacity-80 transition-opacity cursor-pointer"
+      >
         <Avatar className="h-5 w-5 shrink-0">
           {profile?.avatar_url && (
             <AvatarImage src={profile.avatar_url} alt={displayName} />
@@ -75,11 +87,12 @@ export function DashboardInfoBar() {
         {displayName && (
           <span className="font-semibold text-foreground">{displayName}</span>
         )}
-      </span>
+        <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
+      </button>
 
       <span className="text-border">|</span>
 
-      {/* Clock */}
+      {/* ── Clock ── */}
       <span className="flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5" />
         <span className="font-semibold text-foreground">{time}</span>
