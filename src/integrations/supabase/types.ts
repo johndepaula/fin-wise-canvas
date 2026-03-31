@@ -44,6 +44,54 @@ export type Database = {
         }
         Relationships: []
       }
+      app_branding: {
+        Row: {
+          id: string
+          user_id: string
+          logo_url: string | null
+          logo_name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          logo_url?: string | null
+          logo_name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          logo_url?: string | null
+          logo_name?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          id: string
+          user_id: string
+          name: string | null
+          profile_image_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       custom_categories: {
         Row: {
           created_at: string

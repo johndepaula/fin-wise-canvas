@@ -3,32 +3,73 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 
-interface Profile {
+export interface Profile {
   display_name: string | null;
   avatar_url: string | null;
 }
 
+// In-memory cache to avoid multiple requests per session
+let profileCache: Profile | null = null;
+
 export function useProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(profileCache);
+  const [loading, setLoading] = useState(!profileCache);
 
   const fetch = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-    
-    if (data) {
-      setProfile({ display_name: data.display_name, avatar_url: data.avatar_url });
-    } else {
-      // Create automatically if it doesn't exist
-      const newProfile = { id: user.id, display_name: user.email?.split("@")[0] || "Usuário", avatar_url: null };
-      const { data: insertedData } = await supabase.from("profiles").insert(newProfile).select().single();
-      if (insertedData) {
-        setProfile({ display_name: insertedData.display_name, avatar_url: insertedData.avatar_url });
-      } else {
-        setProfile({ display_name: newProfile.display_name, avatar_url: newProfile.avatar_url });
-      }
+
+    // Use cache if available
+    if (profileCache) {
+      setProfile(profileCache);
+      setLoading(false);
+      return;
     }
+
+    // Try new user_profile table first
+    const { data: newProfileData } = await (supabase as any)
+      .from("user_profile")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
+
+    if (newProfileData) {
+      const result: Profile = {
+        display_name: newProfileData.name,
+        avatar_url: newProfileData.profile_image_url,
+      };
+      profileCache = result;
+      setProfile(result);
+      setLoading(false);
+      return;
+    }
+
+    // Fallback: try legacy profiles table
+    const { data: legacyData } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .single();
+
+    if (legacyData) {
+      const result: Profile = {
+        display_name: legacyData.display_name,
+        avatar_url: legacyData.avatar_url,
+      };
+      profileCache = result;
+      setProfile(result);
+      setLoading(false);
+      return;
+    }
+
+    // Create automatically if it doesn't exist in either table
+    const defaultName = user.email?.split("@")[0] || "Usuário";
+    const newEntry = { user_id: user.id, name: defaultName, profile_image_url: null };
+    await (supabase as any).from("user_profile").insert(newEntry);
+
+    const result: Profile = { display_name: defaultName, avatar_url: null };
+    profileCache = result;
+    setProfile(result);
     setLoading(false);
   }, [user]);
 
@@ -36,28 +77,49 @@ export function useProfile() {
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").upsert({ id: user.id, ...updates });
+
+    const mapped: Record<string, unknown> = { user_id: user.id };
+    if ("display_name" in updates) mapped.name = updates.display_name;
+    if ("avatar_url" in updates) mapped.profile_image_url = updates.avatar_url;
+    mapped.updated_at = new Date().toISOString();
+
+    const { error } = await (supabase as any)
+      .from("user_profile")
+      .upsert(mapped, { onConflict: "user_id" });
+
     if (error) {
       toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
       throw error;
-    } else {
-      setProfile((prev) => prev ? { ...prev, ...updates } : { display_name: null, avatar_url: null, ...updates });
-      toast({ title: "Sucesso", description: "Seu perfil foi salvo com sucesso." });
     }
-  }, [user]);
 
-  const uploadAvatar = useCallback(async (file: File) => {
+    // Keep legacy profiles table in sync too
+    await supabase
+      .from("profiles")
+      .upsert({ id: user.id, display_name: updates.display_name, avatar_url: updates.avatar_url });
+
+    const updated = { ...profile, ...updates } as Profile;
+    profileCache = updated;
+    setProfile(updated);
+    toast({ title: "Sucesso", description: "Seu perfil foi salvo com sucesso." });
+  }, [user, profile]);
+
+  const uploadAvatar = useCallback(async (file: File): Promise<string | null> => {
     if (!user) return null;
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar_${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    const { error } = await supabase.storage.from("avatar").upload(path, file, { upsert: true });
     if (error) {
       toast({ title: "Erro no upload", description: error.message, variant: "destructive" });
       throw error;
     }
-    const { data: urlData } = supabase.storage.from("avatars").getPublicUrl(path);
+    const { data: urlData } = supabase.storage.from("avatar").getPublicUrl(path);
     return `${urlData.publicUrl}?t=${Date.now()}`;
   }, [user]);
 
-  return { profile, loading, updateProfile, uploadAvatar };
+  const invalidateCache = useCallback(() => {
+    profileCache = null;
+    fetch();
+  }, [fetch]);
+
+  return { profile, loading, updateProfile, uploadAvatar, invalidateCache };
 }

@@ -12,6 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { formatCurrency, applyCurrencyMask, parseCurrency } from "@/lib/utils";
 
 interface FormData {
   account_type: string;
@@ -56,7 +57,7 @@ export default function Contas() {
 
   const openEdit = useCallback((b: Bill) => {
     setEditingId(b.id);
-    setForm({ account_type: b.account_type, due_date: b.due_date, amount: b.amount.toString(), amount_paid: b.amount_paid.toString() });
+    setForm({ account_type: b.account_type, due_date: b.due_date, amount: applyCurrencyMask(String(Math.round(b.amount * 100))), amount_paid: applyCurrencyMask(String(Math.round(b.amount_paid * 100))) });
     setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
@@ -67,8 +68,8 @@ export default function Contas() {
   };
 
   const handleSave = async () => {
-    const amount = parseFloat(form.amount);
-    const amount_paid = parseFloat(form.amount_paid) || 0;
+    const amount = parseCurrency(form.amount);
+    const amount_paid = parseCurrency(form.amount_paid) || 0;
     if (!form.account_type || !form.due_date || !amount) return;
 
     await accountHistory.save(form.account_type);
@@ -81,7 +82,10 @@ export default function Contas() {
     setModalOpen(false);
   };
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const handleAmountChange = (field: "amount" | "amount_paid") => (e: React.ChangeEvent<HTMLInputElement>) => {
+    const masked = applyCurrencyMask(e.target.value);
+    setForm((f) => ({ ...f, [field]: masked }));
+  };
 
   if (loading) {
     return (
@@ -110,9 +114,15 @@ export default function Contas() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total a Pagar", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
-          { label: "Total Pago", value: fmt(totals.paid), icon: CheckCircle, color: "text-income" },
-          { label: "Restante", value: fmt(totals.remaining), icon: AlertTriangle, color: totals.remaining > 0 ? "text-expense" : "text-income" },
+          {
+          label: "Total a Pagar", value: formatCurrency(totals.total), icon: Wallet, color: "text-foreground"
+        },
+        {
+          label: "Total Pago", value: formatCurrency(totals.paid), icon: CheckCircle, color: "text-income"
+        },
+        {
+          label: "Restante", value: formatCurrency(totals.remaining), icon: AlertTriangle, color: totals.remaining > 0 ? "text-expense" : "text-income"
+        },
         ].map((kpi) => (
           <Card key={kpi.label} className="bg-card border-border">
             <CardContent className="p-5">
@@ -156,9 +166,9 @@ export default function Contas() {
                       <TableRow key={b.id} className="border-border hover:bg-accent/30 transition-colors">
                         <TableCell className="text-sm font-medium">{b.account_type}</TableCell>
                         <TableCell className="text-sm">{new Date(b.due_date + "T00:00:00").toLocaleDateString("pt-BR")}</TableCell>
-                        <TableCell className="text-sm text-right tabular-nums">{fmt(b.amount)}</TableCell>
-                        <TableCell className="text-sm text-right tabular-nums text-income">{fmt(b.amount_paid)}</TableCell>
-                        <TableCell className={`text-sm text-right tabular-nums ${remaining > 0 ? "text-expense" : "text-income"}`}>{fmt(remaining)}</TableCell>
+                        <TableCell className="text-sm text-right tabular-nums">{formatCurrency(b.amount)}</TableCell>
+                        <TableCell className="text-sm text-right tabular-nums text-income">{formatCurrency(b.amount_paid)}</TableCell>
+                        <TableCell className={`text-sm text-right tabular-nums ${remaining > 0 ? "text-expense" : "text-income"}`}>{formatCurrency(remaining)}</TableCell>
                         <TableCell>
                           {remaining <= 0 ? (
                             <Badge variant="outline" className="border-income/30 text-income text-xs">Pago</Badge>
@@ -214,11 +224,23 @@ export default function Contas() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="bg-background border-border mt-1" />
+              <Input
+                inputMode="numeric"
+                placeholder="0,00"
+                value={form.amount}
+                onChange={handleAmountChange("amount")}
+                className="bg-background border-border mt-1"
+              />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor Pago (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount_paid} onChange={(e) => setForm((f) => ({ ...f, amount_paid: e.target.value }))} className="bg-background border-border mt-1" />
+              <Input
+                inputMode="numeric"
+                placeholder="0,00"
+                value={form.amount_paid}
+                onChange={handleAmountChange("amount_paid")}
+                className="bg-background border-border mt-1"
+              />
             </div>
           </div>
           <DialogFooter>
