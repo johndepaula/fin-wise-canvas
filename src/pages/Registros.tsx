@@ -13,6 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionDropdown } from "@/components/SuggestionDropdown";
 import { Plus, Pencil, Trash2, Search, ArrowUpDown } from "lucide-react";
+import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 type SortField = "data" | "valor";
 type SortDir = "asc" | "desc";
