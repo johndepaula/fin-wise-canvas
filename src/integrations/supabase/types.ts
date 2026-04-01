@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_commands_history: {
+        Row: {
+          action_type: string
+          command: string
+          created_at: string
+          id: string
+          response: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          command: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          command?: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bills: {
         Row: {
           account_type: string
@@ -166,6 +193,30 @@ export type Database = {
           id?: string
           latitude?: number
           longitude?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          id: string
+          name: string | null
+          profile_image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

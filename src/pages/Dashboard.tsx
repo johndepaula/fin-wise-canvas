@@ -9,6 +9,7 @@ import { useBills } from "@/hooks/useBills";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
+import { formatCurrencyBRL } from "@/lib/currency";
 
 type Periodo = string;
 
@@ -93,7 +94,7 @@ export default function Dashboard() {
     return list;
   }, [filtrados, categoriaMaiorGasto, totalEntradas, totalSaidas, gastoMedioDiario]);
 
-  const formatCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const formatCurrency = formatCurrencyBRL;
 
   const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);

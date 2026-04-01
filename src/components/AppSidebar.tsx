@@ -3,6 +3,7 @@ import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Sidebar,
@@ -24,11 +25,13 @@ const mainItems = [
 
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+
+  const closeMobile = useCallback(() => setOpenMobile(false), [setOpenMobile]);
 
   const email = user?.email ?? "";
   const initials = email.slice(0, 2).toUpperCase();
@@ -80,7 +83,8 @@ export function AppSidebar() {
                     to={item.url}
                     end={item.url === "/"}
                     className="hover:bg-accent/60 transition-colors duration-150"
-                    activeClassName="bg-accent text-foreground font-medium">
+                    activeClassName="bg-accent text-foreground font-medium"
+                    onClick={closeMobile}>
                     
                       <item.icon className="mr-2.5 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
@@ -101,7 +105,8 @@ export function AppSidebar() {
               <NavLink
                 to="/configuracoes"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <Settings className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Configurações</span>}
@@ -113,7 +118,8 @@ export function AppSidebar() {
               <NavLink
                 to="/perfil"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <User className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Meu Perfil</span>}

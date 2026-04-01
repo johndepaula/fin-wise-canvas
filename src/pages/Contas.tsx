@@ -12,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 interface FormData {
   account_type: string;
@@ -56,7 +58,12 @@ export default function Contas() {
 
   const openEdit = useCallback((b: Bill) => {
     setEditingId(b.id);
-    setForm({ account_type: b.account_type, due_date: b.due_date, amount: b.amount.toString(), amount_paid: b.amount_paid.toString() });
+    setForm({
+      account_type: b.account_type,
+      due_date: b.due_date,
+      amount: b.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      amount_paid: b.amount_paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    });
     setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
@@ -67,8 +74,8 @@ export default function Contas() {
   };
 
   const handleSave = async () => {
-    const amount = parseFloat(form.amount);
-    const amount_paid = parseFloat(form.amount_paid) || 0;
+    const amount = parseCurrencyInput(form.amount);
+    const amount_paid = parseCurrencyInput(form.amount_paid);
     if (!form.account_type || !form.due_date || !amount) return;
 
     await accountHistory.save(form.account_type);
@@ -81,7 +88,7 @@ export default function Contas() {
     setModalOpen(false);
   };
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const fmt = formatCurrencyBRL;
 
   if (loading) {
     return (
@@ -214,11 +221,11 @@ export default function Contas() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} className="bg-background border-border mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor Pago (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount_paid} onChange={(e) => setForm((f) => ({ ...f, amount_paid: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount_paid} onChange={(v) => setForm((f) => ({ ...f, amount_paid: v }))} className="bg-background border-border mt-1" />
             </div>
           </div>
           <DialogFooter>
