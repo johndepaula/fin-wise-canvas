@@ -140,7 +140,7 @@ export default function Dashboard() {
       {/* Profile Header */}
       <div className="flex items-center gap-3 animate-fade-in-up">
         <img
-          src="/logo.png"
+          src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
           alt="Logo"
           className="h-10 w-auto object-contain shrink-0"
           onError={(e) => {
