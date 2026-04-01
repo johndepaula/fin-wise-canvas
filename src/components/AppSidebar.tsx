@@ -45,32 +45,6 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarContent className="pt-6">
-        <div className="flex items-center gap-2.5 px-4 mb-4">
-          <img
-            src="/logo.png"
-            alt="Finplex Logo"
-            className="h-14 w-auto object-contain shrink-0"
-            onError={(e) => {
-              // Fallback visual case the logo isn't uploaded yet
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-14 w-14 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-2xl">F</span></div>');
-            }} />
-          
-          {!collapsed &&
-          <span className="font-semibold text-foreground text-lg tracking-tight">​</span>
-          }
-        </div>
-        {/* Profile block */}
-        <div className="flex items-center gap-2.5 px-4 mb-4">
-          <Avatar className="h-8 w-8 shrink-0">
-            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-            <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
-          </Avatar>
-          {!collapsed &&
-          <span className="text-sm text-foreground truncate">{displayName}</span>
-          }
-        </div>
-
         <Separator className="mb-3 mx-4 bg-border/50" />
 
         <SidebarGroup>
