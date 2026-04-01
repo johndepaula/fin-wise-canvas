@@ -192,7 +192,7 @@ export default function Registros() {
                       <TableCell className="text-sm">{r.categoria}</TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{r.descricao}</TableCell>
                       <TableCell className={`text-sm font-medium text-right tabular-nums ${r.tipo === "entrada" ? "text-income" : "text-expense"}`}>
-                        {r.tipo === "entrada" ? "+" : "−"} R$ {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {r.tipo === "entrada" ? "+" : "−"} {formatCurrencyBRL(r.valor)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
