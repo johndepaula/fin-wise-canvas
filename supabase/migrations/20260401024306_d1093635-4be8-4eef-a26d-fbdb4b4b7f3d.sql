@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN logo_url text DEFAULT NULL;
