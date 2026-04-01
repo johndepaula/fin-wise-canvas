@@ -159,7 +159,7 @@ export default function Dashboard() {
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral das suas finanças</p>
         </div>
         <div className="flex gap-3">
