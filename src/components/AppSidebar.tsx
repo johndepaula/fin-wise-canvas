@@ -24,7 +24,7 @@ const mainItems = [
 
 
 export function AppSidebar() {
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
@@ -37,13 +37,6 @@ export function AppSidebar() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
-  };
-
-  // Close mobile sidebar automatically when a nav link is clicked
-  const handleNavClick = () => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
   };
 
   return (
@@ -87,8 +80,7 @@ export function AppSidebar() {
                     to={item.url}
                     end={item.url === "/"}
                     className="hover:bg-accent/60 transition-colors duration-150"
-                    activeClassName="bg-accent text-foreground font-medium"
-                    onClick={handleNavClick}>
+                    activeClassName="bg-accent text-foreground font-medium">
                     
                       <item.icon className="mr-2.5 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}

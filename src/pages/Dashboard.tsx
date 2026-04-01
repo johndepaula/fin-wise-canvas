@@ -9,7 +9,6 @@ import { useBills } from "@/hooks/useBills";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
-import { formatCurrency } from "@/lib/utils";
 
 type Periodo = string;
 
@@ -80,19 +79,21 @@ export default function Dashboard() {
     }
     const maiorGasto = filtrados.filter((r) => r.tipo === "saida").sort((a, b) => b.valor - a.valor)[0];
     if (maiorGasto) {
-      list.push({ icon: TrendingUp, text: `Seu maior gasto individual foi ${formatCurrency(maiorGasto.valor)} em ${maiorGasto.categoria}.` });
+      list.push({ icon: TrendingUp, text: `Seu maior gasto individual foi R$ ${maiorGasto.valor.toFixed(2)} em ${maiorGasto.categoria}.` });
     }
     if (gastoMedioDiario > 0) {
-      list.push({ icon: CalendarDays, text: `Você gasta em média ${formatCurrency(gastoMedioDiario)} por dia.` });
+      list.push({ icon: CalendarDays, text: `Você gasta em média R$ ${gastoMedioDiario.toFixed(2)} por dia.` });
     }
     const saldo = totalEntradas - totalSaidas;
     if (saldo > 0) {
-      list.push({ icon: TrendingUp, text: `Você está com saldo positivo de ${formatCurrency(saldo)} no período.` });
+      list.push({ icon: TrendingUp, text: `Você está com saldo positivo de R$ ${saldo.toFixed(2)} no período.` });
     } else if (saldo < 0) {
-      list.push({ icon: TrendingDown, text: `Atenção: suas saídas superaram as entradas em ${formatCurrency(Math.abs(saldo))}.` });
+      list.push({ icon: TrendingDown, text: `Atenção: suas saídas superaram as entradas em R$ ${Math.abs(saldo).toFixed(2)}.` });
     }
     return list;
   }, [filtrados, categoriaMaiorGasto, totalEntradas, totalSaidas, gastoMedioDiario]);
+
+  const formatCurrency = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
 
   const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
