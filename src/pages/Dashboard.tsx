@@ -9,6 +9,7 @@ import { useBills } from "@/hooks/useBills";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
+import { formatCurrencyBRL } from "@/lib/currency";
 
 type Periodo = string;
 
