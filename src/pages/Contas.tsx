@@ -83,7 +83,7 @@ export default function Contas() {
     setModalOpen(false);
   };
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const fmt = formatCurrencyBRL;
 
   if (loading) {
     return (
