@@ -95,7 +95,16 @@ export function useBranding() {
     const path = `${user.id}/logo_${Date.now()}.${ext}`;
     const { error } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
     if (error) {
-      toast({ title: "Erro no upload da logo", description: error.message, variant: "destructive" });
+      const isBucketMissing =
+        error.message?.toLowerCase().includes("bucket") ||
+        error.message?.toLowerCase().includes("not found");
+      toast({
+        title: "Erro no upload da logo",
+        description: isBucketMissing
+          ? 'Bucket "logos" não encontrado. Crie-o em Supabase → Storage → New bucket → nome: logos → Public.'
+          : error.message,
+        variant: "destructive",
+      });
       throw error;
     }
     const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
