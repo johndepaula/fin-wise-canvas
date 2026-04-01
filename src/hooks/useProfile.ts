@@ -19,57 +19,38 @@ export function useProfile() {
   const fetch = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
 
-    // Use cache if available
     if (profileCache) {
       setProfile(profileCache);
       setLoading(false);
       return;
     }
 
-    // Try new user_profile table first
-    const { data: newProfileData } = await (supabase as any)
-      .from("user_profile")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
-
-    if (newProfileData) {
-      const result: Profile = {
-        display_name: newProfileData.name,
-        avatar_url: newProfileData.profile_image_url,
-      };
-      profileCache = result;
-      setProfile(result);
-      setLoading(false);
-      return;
-    }
-
-    // Fallback: try legacy profiles table
-    const { data: legacyData } = await supabase
+    // Use the existing "profiles" table
+    const { data } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    if (legacyData) {
+    if (data) {
       const result: Profile = {
-        display_name: legacyData.display_name,
-        avatar_url: legacyData.avatar_url,
+        display_name: data.display_name,
+        avatar_url: data.avatar_url,
       };
       profileCache = result;
       setProfile(result);
-      setLoading(false);
-      return;
+    } else {
+      // Auto-create if not found
+      const defaultName = user.email?.split("@")[0] || "Usuário";
+      await supabase
+        .from("profiles")
+        .insert({ id: user.id, display_name: defaultName, avatar_url: null });
+
+      const result: Profile = { display_name: defaultName, avatar_url: null };
+      profileCache = result;
+      setProfile(result);
     }
 
-    // Create automatically if it doesn't exist in either table
-    const defaultName = user.email?.split("@")[0] || "Usuário";
-    const newEntry = { user_id: user.id, name: defaultName, profile_image_url: null };
-    await (supabase as any).from("user_profile").insert(newEntry);
-
-    const result: Profile = { display_name: defaultName, avatar_url: null };
-    profileCache = result;
-    setProfile(result);
     setLoading(false);
   }, [user]);
 
@@ -78,24 +59,14 @@ export function useProfile() {
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user) return;
 
-    const mapped: Record<string, unknown> = { user_id: user.id };
-    if ("display_name" in updates) mapped.name = updates.display_name;
-    if ("avatar_url" in updates) mapped.profile_image_url = updates.avatar_url;
-    mapped.updated_at = new Date().toISOString();
-
-    const { error } = await (supabase as any)
-      .from("user_profile")
-      .upsert(mapped, { onConflict: "user_id" });
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, ...updates });
 
     if (error) {
       toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
       throw error;
     }
-
-    // Keep legacy profiles table in sync too
-    await supabase
-      .from("profiles")
-      .upsert({ id: user.id, display_name: updates.display_name, avatar_url: updates.avatar_url });
 
     const updated = { ...profile, ...updates } as Profile;
     profileCache = updated;

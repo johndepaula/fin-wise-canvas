@@ -8,7 +8,10 @@ export interface Branding {
   logo_name: string | null;
 }
 
+// In-memory cache to avoid multiple requests per session
 let brandingCache: Branding | null = null;
+// Flag to avoid retrying if table doesn't exist
+let tableExists = true;
 
 export function useBranding() {
   const { user } = useAuth();
@@ -16,43 +19,70 @@ export function useBranding() {
   const [loading, setLoading] = useState(!brandingCache);
 
   const fetch = useCallback(async () => {
-    if (!user) { setBranding(null); setLoading(false); return; }
+    if (!user || !tableExists) {
+      setBranding(null);
+      setLoading(false);
+      return;
+    }
 
-    // Use cache if available
     if (brandingCache) {
       setBranding(brandingCache);
       setLoading(false);
       return;
     }
 
-    const { data } = await (supabase as any)
-      .from("app_branding")
-      .select("*")
-      .eq("user_id", user.id)
-      .single();
+    try {
+      const { data, error } = await (supabase as any)
+        .from("app_branding")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
 
-    const result: Branding = {
-      logo_url: data?.logo_url ?? null,
-      logo_name: data?.logo_name ?? null,
-    };
+      // If table doesn't exist, silently disable branding
+      if (error && (error.code === "42P01" || error.message?.includes("does not exist") || error.message?.includes("schema cache"))) {
+        tableExists = false;
+        setBranding(null);
+        setLoading(false);
+        return;
+      }
 
-    brandingCache = result;
-    setBranding(result);
+      const result: Branding = {
+        logo_url: data?.logo_url ?? null,
+        logo_name: data?.logo_name ?? null,
+      };
+
+      brandingCache = result;
+      setBranding(result);
+    } catch {
+      // Table not available yet — fail silently
+      tableExists = false;
+      setBranding(null);
+    }
+
     setLoading(false);
   }, [user]);
 
   useEffect(() => { fetch(); }, [fetch]);
 
   const updateBranding = useCallback(async (updates: Partial<Branding>) => {
-    if (!user) return;
+    if (!user || !tableExists) {
+      toast({
+        title: "Tabela não encontrada",
+        description: "Execute o SQL de criação das tabelas no Supabase para habilitar esta funcionalidade.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const { error } = await (supabase as any)
       .from("app_branding")
       .upsert({ user_id: user.id, ...updates }, { onConflict: "user_id" });
 
     if (error) {
-      toast({ title: "Erro ao salvar branding", description: error.message, variant: "destructive" });
+      toast({ title: "Erro ao salvar identidade", description: error.message, variant: "destructive" });
       throw error;
     }
+
     const updated = { ...branding, ...updates } as Branding;
     brandingCache = updated;
     setBranding(updated);
@@ -74,6 +104,7 @@ export function useBranding() {
 
   const invalidateCache = useCallback(() => {
     brandingCache = null;
+    tableExists = true; // allow retry after cache clear
     fetch();
   }, [fetch]);
 
