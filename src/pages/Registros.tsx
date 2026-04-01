@@ -79,7 +79,7 @@ export default function Registros() {
   }, []);
 
   const handleSave = async () => {
-    const valor = parseFloat(form.valor);
+    const valor = parseCurrencyInput(form.valor);
     const categoriaFinal = form.categoria === "Outros" ? form.categoriaCustom.trim() : form.categoria;
     if (!valor || !categoriaFinal || !form.descricao || !form.data) return;
 
