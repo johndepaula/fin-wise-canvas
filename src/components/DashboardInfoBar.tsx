@@ -3,6 +3,7 @@ import { useWeather } from "@/hooks/useWeather";
 import { useBills } from "@/hooks/useBills";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { Clock, MapPin, Calendar, DollarSign } from "lucide-react";
+import { formatCurrencyBRL } from "@/lib/currency";
 
 export function DashboardInfoBar() {
   const { time, date, now } = useClock();
