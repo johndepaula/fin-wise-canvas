@@ -25,15 +25,10 @@ const mainItems = [
 export function AppSidebar() {
   const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
-  const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
   const closeMobile = useCallback(() => setOpenMobile(false), [setOpenMobile]);
-
-  const email = user?.email ?? "";
-  const initials = email.slice(0, 2).toUpperCase();
-  const displayName = profile?.display_name || email.split("@")[0];
 
   const handleSignOut = async () => {
     await signOut();
