@@ -58,7 +58,12 @@ export default function Contas() {
 
   const openEdit = useCallback((b: Bill) => {
     setEditingId(b.id);
-    setForm({ account_type: b.account_type, due_date: b.due_date, amount: b.amount.toString(), amount_paid: b.amount_paid.toString() });
+    setForm({
+      account_type: b.account_type,
+      due_date: b.due_date,
+      amount: b.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      amount_paid: b.amount_paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    });
     setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
