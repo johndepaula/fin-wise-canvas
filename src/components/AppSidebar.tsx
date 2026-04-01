@@ -24,11 +24,13 @@ const mainItems = [
 
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const navigate = useNavigate();
+
+  const closeMobile = useCallback(() => setOpenMobile(false), [setOpenMobile]);
 
   const email = user?.email ?? "";
   const initials = email.slice(0, 2).toUpperCase();
