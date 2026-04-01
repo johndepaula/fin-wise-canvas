@@ -6,6 +6,7 @@ import { toast } from "@/hooks/use-toast";
 interface Profile {
   display_name: string | null;
   avatar_url: string | null;
+  logo_url: string | null;
 }
 
 export function useProfile() {
@@ -15,18 +16,17 @@ export function useProfile() {
 
   const fetch = useCallback(async () => {
     if (!user) { setProfile(null); setLoading(false); return; }
-    const { data, error } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+    const { data } = await supabase.from("profiles").select("*").eq("id", user.id).single();
     
     if (data) {
-      setProfile({ display_name: data.display_name, avatar_url: data.avatar_url });
+      setProfile({ display_name: data.display_name, avatar_url: data.avatar_url, logo_url: (data as any).logo_url ?? null });
     } else {
-      // Create automatically if it doesn't exist
       const newProfile = { id: user.id, display_name: user.email?.split("@")[0] || "Usuário", avatar_url: null };
       const { data: insertedData } = await supabase.from("profiles").insert(newProfile).select().single();
       if (insertedData) {
-        setProfile({ display_name: insertedData.display_name, avatar_url: insertedData.avatar_url });
+        setProfile({ display_name: insertedData.display_name, avatar_url: insertedData.avatar_url, logo_url: (insertedData as any).logo_url ?? null });
       } else {
-        setProfile({ display_name: newProfile.display_name, avatar_url: newProfile.avatar_url });
+        setProfile({ display_name: newProfile.display_name, avatar_url: null, logo_url: null });
       }
     }
     setLoading(false);
@@ -36,12 +36,12 @@ export function useProfile() {
 
   const updateProfile = useCallback(async (updates: Partial<Profile>) => {
     if (!user) return;
-    const { error } = await supabase.from("profiles").upsert({ id: user.id, ...updates });
+    const { error } = await supabase.from("profiles").upsert({ id: user.id, ...updates } as any);
     if (error) {
       toast({ title: "Erro ao atualizar perfil", description: error.message, variant: "destructive" });
       throw error;
     } else {
-      setProfile((prev) => prev ? { ...prev, ...updates } : { display_name: null, avatar_url: null, ...updates });
+      setProfile((prev) => prev ? { ...prev, ...updates } : { display_name: null, avatar_url: null, logo_url: null, ...updates });
       toast({ title: "Sucesso", description: "Seu perfil foi salvo com sucesso." });
     }
   }, [user]);
