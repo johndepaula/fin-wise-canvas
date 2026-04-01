@@ -12,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 interface FormData {
   account_type: string;
