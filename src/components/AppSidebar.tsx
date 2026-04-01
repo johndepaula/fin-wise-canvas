@@ -118,7 +118,8 @@ export function AppSidebar() {
               <NavLink
                 to="/perfil"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <User className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Meu Perfil</span>}

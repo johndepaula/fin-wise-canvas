@@ -66,7 +66,7 @@ export function DashboardInfoBar() {
       <span className="flex items-center gap-1.5">
         <DollarSign className="h-3.5 w-3.5" />
         <span>
-          <span className="font-semibold text-foreground">R$ {valorPorDia.toFixed(2)}</span>/dia
+          <span className="font-semibold text-foreground">{formatCurrencyBRL(valorPorDia)}</span>/dia
         </span>
       </span>
     </div>

@@ -216,11 +216,11 @@ export default function Contas() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} className="bg-background border-border mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor Pago (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount_paid} onChange={(e) => setForm((f) => ({ ...f, amount_paid: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount_paid} onChange={(v) => setForm((f) => ({ ...f, amount_paid: v }))} className="bg-background border-border mt-1" />
             </div>
           </div>
           <DialogFooter>

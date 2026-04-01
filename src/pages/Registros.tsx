@@ -229,7 +229,7 @@ export default function Registros() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.valor} onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.valor} onChange={(v) => setForm((f) => ({ ...f, valor: v }))} className="bg-background border-border mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Categoria</Label>
