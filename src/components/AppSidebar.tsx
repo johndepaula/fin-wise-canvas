@@ -105,7 +105,8 @@ export function AppSidebar() {
               <NavLink
                 to="/configuracoes"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <Settings className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Configurações</span>}
