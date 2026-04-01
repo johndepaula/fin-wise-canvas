@@ -69,8 +69,8 @@ export default function Contas() {
   };
 
   const handleSave = async () => {
-    const amount = parseFloat(form.amount);
-    const amount_paid = parseFloat(form.amount_paid) || 0;
+    const amount = parseCurrencyInput(form.amount);
+    const amount_paid = parseCurrencyInput(form.amount_paid);
     if (!form.account_type || !form.due_date || !amount) return;
 
     await accountHistory.save(form.account_type);
