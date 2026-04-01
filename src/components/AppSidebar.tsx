@@ -83,7 +83,8 @@ export function AppSidebar() {
                     to={item.url}
                     end={item.url === "/"}
                     className="hover:bg-accent/60 transition-colors duration-150"
-                    activeClassName="bg-accent text-foreground font-medium">
+                    activeClassName="bg-accent text-foreground font-medium"
+                    onClick={closeMobile}>
                     
                       <item.icon className="mr-2.5 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
