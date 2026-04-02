@@ -137,6 +137,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
+      {/* Profile Header */}
+      <div className="flex items-center gap-3 animate-fade-in-up">
+        <Avatar className="h-9 w-9 shrink-0">
+          {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
+          <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
+      </div>
+
       {/* Info Bar */}
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
