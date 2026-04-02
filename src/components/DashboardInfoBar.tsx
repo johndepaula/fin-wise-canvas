@@ -3,7 +3,7 @@ import { useWeather } from "@/hooks/useWeather";
 import { useBills } from "@/hooks/useBills";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { Clock, MapPin, Calendar, DollarSign } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrencyBRL } from "@/lib/currency";
 
 export function DashboardInfoBar() {
   const { time, date, now } = useClock();
@@ -35,7 +35,6 @@ export function DashboardInfoBar() {
 
   return (
     <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground animate-fade-in-up">
-      {/* ── Clock ── */}
       <span className="flex items-center gap-1.5">
         <Clock className="h-3.5 w-3.5" />
         <span className="font-semibold text-foreground">{time}</span>
@@ -67,7 +66,7 @@ export function DashboardInfoBar() {
       <span className="flex items-center gap-1.5">
         <DollarSign className="h-3.5 w-3.5" />
         <span>
-          <span className="font-semibold text-foreground">{formatCurrency(valorPorDia)}</span>/dia
+          <span className="font-semibold text-foreground">{formatCurrencyBRL(valorPorDia)}</span>/dia
         </span>
       </span>
     </div>

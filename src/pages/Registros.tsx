@@ -13,7 +13,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionDropdown } from "@/components/SuggestionDropdown";
 import { Plus, Pencil, Trash2, Search, ArrowUpDown } from "lucide-react";
-import { formatCurrency, applyCurrencyMask, parseCurrency } from "@/lib/utils";
+import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 type SortField = "data" | "valor";
 type SortDir = "asc" | "desc";
@@ -72,13 +73,20 @@ export default function Registros() {
   const openEdit = useCallback((r: Registro) => {
     setEditingId(r.id);
     const isCustom = ![...CATEGORIAS_ENTRADA, ...CATEGORIAS_SAIDA].includes(r.categoria);
-    setForm({ tipo: r.tipo, valor: applyCurrencyMask(String(Math.round(r.valor * 100))), categoria: isCustom ? "Outros" : r.categoria, categoriaCustom: isCustom ? r.categoria : "", descricao: r.descricao, data: r.data.slice(0, 10) });
+    setForm({
+      tipo: r.tipo,
+      valor: r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      categoria: isCustom ? "Outros" : r.categoria,
+      categoriaCustom: isCustom ? r.categoria : "",
+      descricao: r.descricao,
+      data: r.data.slice(0, 10),
+    });
     setDescSuggestions([]);
     setModalOpen(true);
   }, []);
 
   const handleSave = async () => {
-    const valor = parseCurrency(form.valor);
+    const valor = parseCurrencyInput(form.valor);
     const categoriaFinal = form.categoria === "Outros" ? form.categoriaCustom.trim() : form.categoria;
     if (!valor || !categoriaFinal || !form.descricao || !form.data) return;
 
@@ -191,7 +199,7 @@ export default function Registros() {
                       <TableCell className="text-sm">{r.categoria}</TableCell>
                       <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{r.descricao}</TableCell>
                       <TableCell className={`text-sm font-medium text-right tabular-nums ${r.tipo === "entrada" ? "text-income" : "text-expense"}`}>
-                        {r.tipo === "entrada" ? "+" : "−"} {formatCurrency(r.valor)}
+                        {r.tipo === "entrada" ? "+" : "−"} {formatCurrencyBRL(r.valor)}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
@@ -228,13 +236,7 @@ export default function Registros() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input
-                inputMode="numeric"
-                placeholder="0,00"
-                value={form.valor}
-                onChange={(e) => setForm((f) => ({ ...f, valor: applyCurrencyMask(e.target.value) }))}
-                className="bg-background border-border mt-1"
-              />
+              <CurrencyInput value={form.valor} onChange={(v) => setForm((f) => ({ ...f, valor: v }))} className="bg-background border-border mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Categoria</Label>

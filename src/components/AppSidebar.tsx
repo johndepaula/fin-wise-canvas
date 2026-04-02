@@ -2,6 +2,7 @@ import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useCallback } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -23,26 +24,30 @@ const mainItems = [
 
 
 export function AppSidebar() {
-  const { state, isMobile, setOpenMobile } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
   const { signOut } = useAuth();
   const navigate = useNavigate();
+
+  const closeMobile = useCallback(() => setOpenMobile(false), [setOpenMobile]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
-  // Close mobile sidebar automatically when a nav link is clicked
-  const handleNavClick = () => {
-    if (isMobile) {
-      setOpenMobile(false);
-    }
-  };
-
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarContent className="pt-6">
+      <SidebarContent className="pt-4">
+        <div className="px-4 mb-2 flex justify-center">
+          <img
+            src="/lovable-uploads/853f9d2e-1310-4b8f-bfcd-0aa85d8a98ef.png"
+            alt="Logo"
+            className={collapsed ? "h-7 w-auto object-contain" : "h-10 w-auto object-contain"}
+          />
+        </div>
+        <Separator className="mb-3 mx-4 bg-border/50" />
+
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -54,7 +59,7 @@ export function AppSidebar() {
                     end={item.url === "/"}
                     className="hover:bg-accent/60 transition-colors duration-150"
                     activeClassName="bg-accent text-foreground font-medium"
-                    onClick={handleNavClick}>
+                    onClick={closeMobile}>
                     
                       <item.icon className="mr-2.5 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
@@ -76,7 +81,7 @@ export function AppSidebar() {
                 to="/configuracoes"
                 className="hover:bg-accent/60 transition-colors duration-150"
                 activeClassName="bg-accent text-foreground font-medium"
-                onClick={handleNavClick}>
+                onClick={closeMobile}>
                 
                 <Settings className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Configurações</span>}
@@ -89,7 +94,7 @@ export function AppSidebar() {
                 to="/perfil"
                 className="hover:bg-accent/60 transition-colors duration-150"
                 activeClassName="bg-accent text-foreground font-medium"
-                onClick={handleNavClick}>
+                onClick={closeMobile}>
                 
                 <User className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Meu Perfil</span>}

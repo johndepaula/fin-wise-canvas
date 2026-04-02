@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_commands_history: {
+        Row: {
+          action_type: string
+          command: string
+          created_at: string
+          id: string
+          response: string | null
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          command: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          command?: string
+          created_at?: string
+          id?: string
+          response?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bills: {
         Row: {
           account_type: string
@@ -41,54 +68,6 @@ export type Database = {
           due_date?: string
           id?: string
           user_id?: string
-        }
-        Relationships: []
-      }
-      app_branding: {
-        Row: {
-          id: string
-          user_id: string
-          logo_url: string | null
-          logo_name: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          logo_url?: string | null
-          logo_name?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          logo_url?: string | null
-          logo_name?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      user_profile: {
-        Row: {
-          id: string
-          user_id: string
-          name: string | null
-          profile_image_url: string | null
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          name?: string | null
-          profile_image_url?: string | null
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          name?: string | null
-          profile_image_url?: string | null
-          updated_at?: string
         }
         Relationships: []
       }
@@ -152,18 +131,21 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          logo_url: string | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id: string
+          logo_url?: string | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
+          logo_url?: string | null
         }
         Relationships: []
       }
@@ -214,6 +196,30 @@ export type Database = {
           id?: string
           latitude?: number
           longitude?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profile: {
+        Row: {
+          id: string
+          name: string | null
+          profile_image_url: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          profile_image_url?: string | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []

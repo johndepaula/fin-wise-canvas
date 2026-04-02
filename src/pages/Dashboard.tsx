@@ -1,19 +1,18 @@
 import { useMemo, useState } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBills } from "@/hooks/useBills";
-import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet, Pencil } from "lucide-react";
+import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
-import { formatCurrency } from "@/lib/utils";
-import { useProfile } from "@/hooks/useProfile";
-import { useBranding } from "@/hooks/useBranding";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { useNavigate } from "react-router-dom";
+import { formatCurrencyBRL } from "@/lib/currency";
 
 type Periodo = string;
 
@@ -22,16 +21,13 @@ export default function Dashboard() {
   const { settings } = useUserSettings();
   const { bills } = useBills();
   const { profile } = useProfile();
-  const { branding } = useBranding();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const email = user?.email ?? "";
+  const initials = email.slice(0, 2).toUpperCase();
+  const displayName = profile?.display_name || email.split("@")[0];
   const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
-
-  const displayName = profile?.display_name || "";
-  const initials = displayName.slice(0, 2).toUpperCase() || "U";
-  const logoName = branding?.logo_name || "Finplex";
-  const logoUrl = branding?.logo_url || null;
 
   const filtrados = useMemo(() => {
     const now = new Date();
@@ -92,19 +88,21 @@ export default function Dashboard() {
     }
     const maiorGasto = filtrados.filter((r) => r.tipo === "saida").sort((a, b) => b.valor - a.valor)[0];
     if (maiorGasto) {
-      list.push({ icon: TrendingUp, text: `Seu maior gasto individual foi ${formatCurrency(maiorGasto.valor)} em ${maiorGasto.categoria}.` });
+      list.push({ icon: TrendingUp, text: `Seu maior gasto individual foi R$ ${maiorGasto.valor.toFixed(2)} em ${maiorGasto.categoria}.` });
     }
     if (gastoMedioDiario > 0) {
-      list.push({ icon: CalendarDays, text: `Você gasta em média ${formatCurrency(gastoMedioDiario)} por dia.` });
+      list.push({ icon: CalendarDays, text: `Você gasta em média R$ ${gastoMedioDiario.toFixed(2)} por dia.` });
     }
     const saldo = totalEntradas - totalSaidas;
     if (saldo > 0) {
-      list.push({ icon: TrendingUp, text: `Você está com saldo positivo de ${formatCurrency(saldo)} no período.` });
+      list.push({ icon: TrendingUp, text: `Você está com saldo positivo de R$ ${saldo.toFixed(2)} no período.` });
     } else if (saldo < 0) {
-      list.push({ icon: TrendingDown, text: `Atenção: suas saídas superaram as entradas em ${formatCurrency(Math.abs(saldo))}.` });
+      list.push({ icon: TrendingDown, text: `Atenção: suas saídas superaram as entradas em R$ ${Math.abs(saldo).toFixed(2)}.` });
     }
     return list;
   }, [filtrados, categoriaMaiorGasto, totalEntradas, totalSaidas, gastoMedioDiario]);
+
+  const formatCurrency = formatCurrencyBRL;
 
   const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
@@ -139,57 +137,20 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
-      {/* Identity Section */}
-      <div className="flex items-center gap-4 animate-fade-in-up">
-        {/* Logo + Brand name */}
-        <button
-          onClick={() => navigate("/perfil")}
-          title="Editar identidade visual"
-          className="flex items-center gap-2 group hover:opacity-80 transition-opacity cursor-pointer"
-        >
-          {logoUrl ? (
-            <img
-              src={logoUrl}
-              alt={logoName}
-              className="h-8 w-auto object-contain shrink-0"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-              <span className="text-primary-foreground font-bold text-sm">F</span>
-            </div>
-          )}
-          <span className="font-bold text-foreground text-base">{logoName}</span>
-          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
-        </button>
-
-        <span className="text-border">|</span>
-
-        {/* Avatar + User name */}
-        <button
-          onClick={() => navigate("/perfil")}
-          title="Editar perfil"
-          className="flex items-center gap-2 group hover:opacity-80 transition-opacity cursor-pointer"
-        >
-          <Avatar className="h-7 w-7 shrink-0">
-            {profile?.avatar_url && (
-              <AvatarImage src={profile.avatar_url} alt={displayName} />
-            )}
-            <AvatarFallback className="text-xs bg-muted">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {displayName && (
-            <span className="font-semibold text-foreground text-sm">{displayName}</span>
-          )}
-          <Pencil className="h-3 w-3 opacity-0 group-hover:opacity-60 transition-opacity" />
-        </button>
+      {/* Profile Header */}
+      <div className="flex items-center gap-3 animate-fade-in-up">
+        <Avatar className="h-9 w-9 shrink-0">
+          {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
+          <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
       </div>
 
       {/* Info Bar */}
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Painel</h1>
           <p className="text-muted-foreground text-sm mt-1">Visão geral das suas finanças</p>
         </div>
         <div className="flex gap-3">
