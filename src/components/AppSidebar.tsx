@@ -40,7 +40,7 @@ export function AppSidebar() {
       <SidebarContent className="pt-4">
         <div className="px-4 mb-2 flex justify-center">
           <img
-            src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
+            src="/lovable-uploads/853f9d2e-1310-4b8f-bfcd-0aa85d8a98ef.png"
             alt="Logo"
             className={collapsed ? "h-7 w-auto object-contain" : "h-10 w-auto object-contain"}
           />
