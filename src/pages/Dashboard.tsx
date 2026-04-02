@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
-
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
