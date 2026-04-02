@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,12 +12,6 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [showSplash, setShowSplash] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 2200);
-    return () => clearTimeout(timer);
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,43 +37,9 @@ export default function Auth() {
     setLoading(false);
   };
 
-  if (showSplash) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4 animate-fade-in-up">
-          <img
-            src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
-            alt="Logo"
-            className="h-28 w-auto object-contain animate-pulse"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-28 w-28 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-5xl">F</span></div>');
-            }}
-          />
-          <span className="font-bold text-foreground text-3xl tracking-tight animate-fade-in-up" style={{ animationDelay: '0.5s' }}>
-            FINPLEX
-          </span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in-up">
-        <div className="flex items-center gap-2.5 justify-center mb-8">
-          <img
-            src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
-            alt="FINPLEX Logo"
-            className="h-20 w-auto object-contain"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-20 w-20 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-3xl">F</span></div>');
-            }}
-          />
-          <span className="font-semibold text-foreground text-2xl tracking-tight">FINPLEX</span>
-        </div>
-
         <Card className="bg-card border-border">
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold mb-1">{isLogin ? "Entrar" : "Criar conta"}</h2>
