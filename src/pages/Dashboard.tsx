@@ -132,24 +132,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
-      {/* Profile Header */}
-      <div className="flex items-center gap-3 animate-fade-in-up">
-        <img
-          src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
-          alt="Logo"
-          className="h-10 w-auto object-contain shrink-0"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-        <div className="h-6 w-px bg-border/50" />
-        <Avatar className="h-9 w-9 shrink-0">
-          {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-          <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
-      </div>
-
       {/* Info Bar */}
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
