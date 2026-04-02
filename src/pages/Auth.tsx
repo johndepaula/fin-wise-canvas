@@ -40,20 +40,6 @@ export default function Auth() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm animate-fade-in-up">
-        <div className="flex items-center gap-2.5 justify-center mb-8">
-          <img 
-            src="/logo.png" 
-            alt="FINPLEX Logo" 
-            className="h-20 w-auto object-contain" 
-            onError={(e) => {
-              // Fallback visual caso a logo não tenha sido enviada
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-20 w-20 rounded-xl bg-primary flex items-center justify-center"><span class="text-primary-foreground font-bold text-3xl">F</span></div>');
-            }}
-          />
-          <span className="font-semibold text-foreground text-2xl tracking-tight">FINPLEX</span>
-        </div>
-
         <Card className="bg-card border-border">
           <CardContent className="p-6">
             <h2 className="text-lg font-semibold mb-1">{isLogin ? "Entrar" : "Criar conta"}</h2>
