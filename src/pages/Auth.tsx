@@ -42,6 +42,13 @@ export default function Auth() {
       <div className="w-full max-w-sm animate-fade-in-up">
         <Card className="bg-card border-border">
           <CardContent className="p-6">
+            <div className="mb-6 flex justify-center">
+              <img
+                src="/logo.png"
+                alt="Logo"
+                className="login-logo-animation h-16 w-auto object-contain"
+              />
+            </div>
             <h2 className="text-lg font-semibold mb-1">{isLogin ? "Entrar" : "Criar conta"}</h2>
             <p className="text-muted-foreground text-sm mb-6">
               {isLogin ? "Acesse sua conta para continuar" : "Preencha os dados para se cadastrar"}
