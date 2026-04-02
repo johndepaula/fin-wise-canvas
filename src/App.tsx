@@ -63,14 +63,14 @@ function ProtectedRoutes() {
 
   if (showWelcome) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-        <p className="text-2xl font-bold tracking-widest text-primary animate-fade-in" style={{ animationDuration: "0.6s" }}>
-          {getWelcomeMessage()}
-        </p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 text-center px-4">
+        <h1 className="text-3xl font-bold text-foreground animate-fade-in" style={{ animationDuration: "0.6s" }}>
+          SEJA BEM VINDO
+        </h1>
         <img
-          src="/lovable-uploads/853f9d2e-1310-4b8f-bfcd-0aa85d8a98ef.png"
-          alt="Logo"
-          className="h-24 w-auto animate-scale-in"
+          src="/logo.png"
+          alt="Logo do Sistema"
+          className="h-48 w-auto max-w-full object-contain animate-scale-in"
           style={{ animationDuration: "0.8s", animationDelay: "0.3s", animationFillMode: "both" }}
         />
       </div>
