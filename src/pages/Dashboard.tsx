@@ -137,6 +137,16 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
+      {/* Welcome Message and Logo */}
+      <div className="text-center mb-6 animate-fade-in-up">
+        <h1 className="text-3xl font-bold text-foreground mb-4">SEJA BEM VINDO</h1>
+        <img 
+          src="/logo.png" 
+          alt="Logo do Sistema" 
+          className="mx-auto max-h-32 max-w-full object-contain"
+        />
+      </div>
+      
       {/* Profile Header */}
       <div className="flex items-center gap-3 animate-fade-in-up">
         <Avatar className="h-9 w-9 shrink-0">
