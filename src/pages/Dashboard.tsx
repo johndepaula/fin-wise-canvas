@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
-
+import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +20,11 @@ export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
   const { bills } = useBills();
+  const { profile } = useProfile();
+  const { user } = useAuth();
+  const email = user?.email ?? "";
+  const initials = email.slice(0, 2).toUpperCase();
+  const displayName = profile?.display_name || email.split("@")[0];
   const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
@@ -130,6 +137,15 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
+      {/* Profile Header */}
+      <div className="flex items-center gap-3 animate-fade-in-up">
+        <Avatar className="h-9 w-9 shrink-0">
+          {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
+          <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
+        </Avatar>
+        <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
+      </div>
+
       {/* Info Bar */}
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
