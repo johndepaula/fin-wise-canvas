@@ -8,7 +8,6 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -18,7 +17,6 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
-{ title: "Coloque o nome", url: "#", icon: User },
 { title: "Dashboard", url: "/", icon: LayoutDashboard },
 { title: "Meus Registros", url: "/registros", icon: Receipt },
 { title: "Contas", url: "/contas", icon: Wallet }];
@@ -42,7 +40,7 @@ export function AppSidebar() {
       <SidebarContent className="pt-4">
         <div className="px-4 mb-2 flex justify-center">
           <img
-            src="/lovable-uploads/853f9d2e-1310-4b8f-bfcd-0aa85d8a98ef.png"
+            src="/logo.png"
             alt="Logo"
             className={collapsed ? "h-7 w-auto object-contain" : "h-10 w-auto object-contain"}
           />
