@@ -19,11 +19,7 @@ export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
   const { bills } = useBills();
-  const { profile } = useProfile();
-  const { user } = useAuth();
-  const email = user?.email ?? "";
-  const initials = email.slice(0, 2).toUpperCase();
-  const displayName = profile?.display_name || email.split("@")[0];
+  const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
