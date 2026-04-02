@@ -1,18 +1,16 @@
 import { useMemo, useState } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useUserSettings } from "@/hooks/useUserSettings";
-import { useProfile } from "@/hooks/useProfile";
+
 import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBills } from "@/hooks/useBills";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 import { formatCurrencyBRL } from "@/lib/currency";
-import { useAuth } from "@/contexts/AuthContext";
 
 type Periodo = string;
 
@@ -20,11 +18,6 @@ export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
   const { bills } = useBills();
-  const { profile } = useProfile();
-  const { user } = useAuth();
-  const email = user?.email ?? "";
-  const initials = email.slice(0, 2).toUpperCase();
-  const displayName = profile?.display_name || email.split("@")[0];
   const diasDoMesAtual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate().toString();
   const [periodo, setPeriodo] = useState<Periodo>(diasDoMesAtual);
   const [catFiltro, setCatFiltro] = useState("todas");
@@ -137,24 +130,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-7xl">
-      {/* Profile Header */}
-      <div className="flex items-center gap-3 animate-fade-in-up">
-        <img
-          src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
-          alt="Logo"
-          className="h-10 w-auto object-contain shrink-0"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-        <div className="h-6 w-px bg-border/50" />
-        <Avatar className="h-9 w-9 shrink-0">
-          {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-          <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
-        </Avatar>
-        <span className="text-sm font-medium text-foreground truncate">{displayName}</span>
-      </div>
-
       {/* Info Bar */}
       <DashboardInfoBar />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-fade-in-up">
