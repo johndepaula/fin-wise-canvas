@@ -1,34 +1,42 @@
 
 
-## Plano — Reorganizar logo, limpar duplicações, manter perfil
+## Plano — Animação de boas-vindas no login com idioma automático
 
-### Resumo
+### O que será feito
 
-1. Adicionar a logo fixa no topo da sidebar, acima dos itens de navegação
-2. Remover o bloco de logo + avatar + nome que está acima da InfoBar no Dashboard
-3. Remover a seção "Logo da plataforma" da página Meu Perfil
-4. Perfil (foto, nome, email) permanece 100% intacto
+Após o login bem-sucedido, exibir uma tela de splash animada com:
+- Mensagem "SEJA BEM-VINDO" (traduzida automaticamente com base no idioma do navegador)
+- Logo da plataforma com animação
+- Duração de ~2.5 segundos antes de redirecionar ao Dashboard
+
+### Traduções suportadas
+
+Usar `navigator.language` para detectar o idioma:
+- `pt` → "SEJA BEM-VINDO"
+- `en` → "WELCOME"
+- `es` → "BIENVENIDO"
+- `fr` → "BIENVENUE"
+- `de` → "WILLKOMMEN"
+- `it` → "BENVENUTO"
+- `ja` → "ようこそ"
+- `zh` → "欢迎"
+- Fallback → "WELCOME"
 
 ### Alterações por arquivo
 
-**`src/components/AppSidebar.tsx`**
-- Adicionar `<img src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png" />` no topo do `SidebarContent`, antes do Separator e dos itens de navegação
-- Quando colapsado, mostrar a logo menor; quando expandido, tamanho normal
+**`src/App.tsx`**
+- Adicionar estado `showWelcome` no `ProtectedRoutes`
+- Quando `session` existir e `showWelcome` for true, exibir tela de splash com logo + mensagem traduzida por 2.5s
+- Após o tempo, mostrar as rotas normais
+- Usar `useRef` para garantir que a animação só aparece uma vez por sessão (não ao navegar entre páginas)
 
-**`src/pages/Dashboard.tsx`**
-- Remover linhas 140-156 (bloco com logo, avatar e displayName acima da InfoBar)
-- Remover imports não utilizados (`Avatar`, `AvatarImage`, `AvatarFallback`, `useProfile`, `useAuth` se não usados em outro lugar)
+**`src/pages/Auth.tsx`**
+- Manter splash inicial (ao abrir a página) como está
+- Nenhuma alteração necessária — a animação pós-login será gerenciada no `ProtectedRoutes`
 
-**`src/pages/Perfil.tsx`**
-- Remover linhas 124-146 (seção "Logo da plataforma" com upload)
-- Remover linha 148 (Separator abaixo da logo)
-- Remover estado `logoFile`, `logoPreviewUrl`, `logoFileRef` e handler `handleLogoChange`
-- Remover lógica de upload de logo do `handleSave`
-- Manter avatar, nome, email e botões intactos
+### Detalhes técnicos
 
-### O que NÃO muda
-- Layout geral, navegação, DashboardInfoBar (hora/data/clima)
-- Página de Configurações (não tem logo lá — está em Perfil)
-- Funcionalidade de foto e nome no perfil
-- Tabela `profiles` no banco (coluna `logo_url` permanece, apenas não é usada)
+- A função de tradução será um map simples baseado em `navigator.language.slice(0, 2)`
+- A animação usará as classes existentes: `animate-fade-in-up`, `animate-pulse`
+- Um `sessionStorage` flag evita que a animação repita ao recarregar a página (só aparece no momento do login)
 
