@@ -14,13 +14,10 @@ export default function Perfil() {
   const { profile, uploadAvatar, updateProfile } = useProfile();
   const navigate = useNavigate();
   const fileRef = useRef<HTMLInputElement>(null);
-  const logoFileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {

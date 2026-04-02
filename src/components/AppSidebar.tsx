@@ -37,7 +37,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarContent className="pt-6">
+      <SidebarContent className="pt-4">
+        <div className="px-4 mb-2 flex justify-center">
+          <img
+            src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png"
+            alt="Logo"
+            className={collapsed ? "h-7 w-auto object-contain" : "h-10 w-auto object-contain"}
+          />
+        </div>
         <Separator className="mb-3 mx-4 bg-border/50" />
 
         <SidebarGroup>
