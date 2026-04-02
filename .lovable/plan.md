@@ -1,24 +1,34 @@
 
 
-## Plano — Negrito nos valores + Município no clima
+## Plano — Reorganizar logo, limpar duplicações, manter perfil
 
-### 1. Negrito nos valores da InfoBar
+### Resumo
 
-No `DashboardInfoBar.tsx`, envolver os valores dinâmicos (hora, data, condição climática, dias restantes, valor/dia) em `<span className="font-semibold text-foreground">` para destacá-los visualmente, mantendo os labels e ícones com a cor atual `text-muted-foreground`.
+1. Adicionar a logo fixa no topo da sidebar, acima dos itens de navegação
+2. Remover o bloco de logo + avatar + nome que está acima da InfoBar no Dashboard
+3. Remover a seção "Logo da plataforma" da página Meu Perfil
+4. Perfil (foto, nome, email) permanece 100% intacto
 
-### 2. Município no clima
+### Alterações por arquivo
 
-No `useWeather.ts`:
-- Adicionar `city` ao estado e à interface `WeatherData`
-- Usar reverse geocoding gratuito via `https://nominatim.openstreetmap.org/reverse?lat=X&lon=Y&format=json` para obter o nome do município a partir das coordenadas
-- Salvar o `city` na tabela `user_location` junto com lat/lng
-- Retornar `city` no hook
+**`src/components/AppSidebar.tsx`**
+- Adicionar `<img src="/lovable-uploads/85d29aa0-c4f7-4e62-8d72-f7a1c76d6bcb.png" />` no topo do `SidebarContent`, antes do Separator e dos itens de navegação
+- Quando colapsado, mostrar a logo menor; quando expandido, tamanho normal
 
-No `DashboardInfoBar.tsx`:
-- Exibir o município antes da temperatura: `São Paulo — 25°C Limpo ☀️`
+**`src/pages/Dashboard.tsx`**
+- Remover linhas 140-156 (bloco com logo, avatar e displayName acima da InfoBar)
+- Remover imports não utilizados (`Avatar`, `AvatarImage`, `AvatarFallback`, `useProfile`, `useAuth` se não usados em outro lugar)
 
-### Arquivos alterados
+**`src/pages/Perfil.tsx`**
+- Remover linhas 124-146 (seção "Logo da plataforma" com upload)
+- Remover linha 148 (Separator abaixo da logo)
+- Remover estado `logoFile`, `logoPreviewUrl`, `logoFileRef` e handler `handleLogoChange`
+- Remover lógica de upload de logo do `handleSave`
+- Manter avatar, nome, email e botões intactos
 
-- `src/hooks/useWeather.ts` — adicionar `city`, chamada ao Nominatim, salvar no upsert
-- `src/components/DashboardInfoBar.tsx` — negrito nos valores + exibir `weather.city`
+### O que NÃO muda
+- Layout geral, navegação, DashboardInfoBar (hora/data/clima)
+- Página de Configurações (não tem logo lá — está em Perfil)
+- Funcionalidade de foto e nome no perfil
+- Tabela `profiles` no banco (coluna `logo_url` permanece, apenas não é usada)
 
