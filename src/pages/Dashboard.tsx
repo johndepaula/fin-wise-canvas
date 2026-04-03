@@ -211,13 +211,19 @@ export default function Dashboard() {
           <CardContent className="h-[280px]">
             {gastosPorDia.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={gastosPorDia}>
+                <AreaChart data={gastosPorDia}>
+                  <defs>
+                    <linearGradient id="colorGasto" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={settings.chart_color} stopOpacity={0.4} />
+                      <stop offset="95%" stopColor={settings.chart_color} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(224 12% 18%)" />
                   <XAxis dataKey="dia" tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} />
-                  <Line type={settings.chart_line_style as any} dataKey="valor" stroke={settings.chart_color} strokeWidth={2} dot={{ fill: settings.chart_color, r: 3 }} activeDot={{ r: 5 }} />
-                </LineChart>
+                  <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} formatter={(value: number) => [formatCurrency(value), "Gasto"]} />
+                  <Area type={settings.chart_line_style as any} dataKey="valor" stroke={settings.chart_color} strokeWidth={2} fill="url(#colorGasto)" dot={{ fill: settings.chart_color, r: 3 }} activeDot={{ r: 5 }} />
+                </AreaChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no período</div>
