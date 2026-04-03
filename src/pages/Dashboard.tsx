@@ -16,7 +16,10 @@ import { formatCurrencyBRL } from "@/lib/currency";
 
 type Periodo = string;
 
-const PIE_COLORS = [
+const PIE_COLORS_INCOME = "#4ADE80";
+const PIE_COLORS_EXPENSE = "#F87171";
+const PIE_COLORS_SALDO = "#60A5FA";
+const PIE_COLORS_CATEGORIES = [
   "#2DD4BF", "#22D3EE", "#818CF8", "#C084FC", "#F472B6",
   "#FB7185", "#FDA4AF", "#FCD34D", "#A3E635", "#4ADE80",
 ];
@@ -83,6 +86,28 @@ export default function Dashboard() {
     return Object.entries(map)
       .map(([categoria, valor]) => ({ categoria, valor: Math.round(valor * 100) / 100 }))
       .sort((a, b) => b.valor - a.valor);
+  }, [filtrados]);
+
+  const distribuicaoFinanceira = useMemo(() => {
+    const receitas = filtrados.filter((r) => r.tipo === "entrada").reduce((s, r) => s + r.valor, 0);
+    const despesas = filtrados.filter((r) => r.tipo === "saida").reduce((s, r) => s + r.valor, 0);
+    const saldo = receitas - despesas;
+    
+    const data: { name: string; valor: number; color: string }[] = [];
+    
+    if (receitas > 0) {
+      data.push({ name: "Receitas", valor: Math.round(receitas * 100) / 100, color: PIE_COLORS_INCOME });
+    }
+    
+    if (despesas > 0) {
+      data.push({ name: "Despesas", valor: Math.round(despesas * 100) / 100, color: PIE_COLORS_EXPENSE });
+    }
+    
+    if (saldo !== 0) {
+      data.push({ name: saldo > 0 ? "Saldo Positivo" : "Saldo Negativo", valor: Math.round(Math.abs(saldo) * 100) / 100, color: PIE_COLORS_SALDO });
+    }
+    
+    return data;
   }, [filtrados]);
 
   const insights = useMemo(() => {
@@ -253,25 +278,27 @@ export default function Dashboard() {
 
         <Card className="animate-fade-in-up stagger-5 bg-card border-border lg:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Distribuição de Despesas</CardTitle>
+            <CardTitle className="text-sm font-medium text-muted-foreground">Visão Geral Financeira</CardTitle>
           </CardHeader>
           <CardContent className="h-[300px]">
-            {despesasPorCategoria.length > 0 ? (
+            {distribuicaoFinanceira.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={despesasPorCategoria}
+                    data={distribuicaoFinanceira}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={2}
+                    outerRadius={110}
+                    paddingAngle={3}
                     dataKey="valor"
                     animationBegin={0}
                     animationDuration={800}
+                    label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                    labelLine={false}
                   >
-                    {despesasPorCategoria.map((_, index) => (
-                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
+                    {distribuicaoFinanceira.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
                   <Tooltip
