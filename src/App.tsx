@@ -32,21 +32,46 @@ function getWelcomeMessage() {
   return welcomeTranslations[lang] || welcomeTranslations.en;
 }
 
+function WelcomeScreen() {
+  return (
+    <div className="animate-welcome-container min-h-screen flex flex-col items-center justify-center bg-background">
+      <div className="flex flex-col items-center justify-center gap-6">
+        <h1 className="text-4xl sm:text-5xl font-bold text-foreground animate-welcome-text">
+          SEJA BEM VINDO
+        </h1>
+        <img
+          src="/logo.png"
+          alt="Logo do Sistema"
+          className="h-32 sm:h-40 w-auto max-w-full object-contain animate-welcome-logo"
+        />
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
-  const prevSessionRef = useRef<string | null>(null);
+  const prevSessionIdRef = useRef<string | null>(null);
+  const hasShownWelcome = useRef(false);
 
   useEffect(() => {
+    if (loading) return;
+    
     const currentSessionId = session?.user?.id || null;
-    const prevSessionId = prevSessionRef.current;
+    const prevSessionId = prevSessionIdRef.current;
 
-    if (session && !loading && currentSessionId !== prevSessionId) {
-      prevSessionRef.current = currentSessionId;
+    if (session && currentSessionId !== prevSessionId && !hasShownWelcome.current) {
+      prevSessionIdRef.current = currentSessionId;
+      hasShownWelcome.current = true;
       setShowWelcome(true);
-      setTimeout(() => setShowWelcome(false), 2000);
+      const timer = setTimeout(() => setShowWelcome(false), 2000);
+      return () => clearTimeout(timer);
+    } else if (session) {
+      prevSessionIdRef.current = currentSessionId;
     } else if (!session) {
-      prevSessionRef.current = null;
+      prevSessionIdRef.current = null;
+      hasShownWelcome.current = false;
     }
   }, [session, loading]);
 
@@ -60,35 +85,21 @@ function ProtectedRoutes() {
 
   if (!session) return <Navigate to="/auth" replace />;
 
-  if (showWelcome) {
-    return (
-      <div className="animate-welcome-container min-h-screen flex flex-col items-center justify-center bg-background">
-        <div className="flex flex-col items-center justify-center gap-6">
-          <h1 className="text-4xl sm:text-5xl font-bold text-foreground animate-welcome-text">
-            SEJA BEM VINDO
-          </h1>
-          <img
-            src="/logo.png"
-            alt="Logo do Sistema"
-            className="h-32 sm:h-40 w-auto max-w-full object-contain animate-welcome-logo"
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <RegistrosProvider>
-      <AppLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/registros" element={<Registros />} />
-          <Route path="/contas" element={<Contas />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </AppLayout>
+      {showWelcome && <WelcomeScreen />}
+      <div style={{ display: showWelcome ? "none" : "contents" }}>
+        <AppLayout>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/registros" element={<Registros />} />
+            <Route path="/contas" element={<Contas />} />
+            <Route path="/configuracoes" element={<Configuracoes />} />
+            <Route path="/perfil" element={<Perfil />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AppLayout>
+      </div>
     </RegistrosProvider>
   );
 }
