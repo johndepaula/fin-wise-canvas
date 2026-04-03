@@ -10,11 +10,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBills } from "@/hooks/useBills";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 import { formatCurrencyBRL } from "@/lib/currency";
 
 type Periodo = string;
+
+const PIE_COLORS = [
+  "#2DD4BF", "#22D3EE", "#818CF8", "#C084FC", "#F472B6",
+  "#FB7185", "#FDA4AF", "#FCD34D", "#A3E635", "#4ADE80",
+];
 
 export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
@@ -239,6 +244,45 @@ export default function Dashboard() {
                   <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} />
                   <Bar dataKey="valor" fill={settings.category_chart_color} radius={[6, 6, 0, 0]} />
                 </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no período</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="animate-fade-in-up stagger-5 bg-card border-border lg:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Distribuição de Despesas</CardTitle>
+          </CardHeader>
+          <CardContent className="h-[300px]">
+            {despesasPorCategoria.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={despesasPorCategoria}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={2}
+                    dataKey="valor"
+                    animationBegin={0}
+                    animationDuration={800}
+                  >
+                    {despesasPorCategoria.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }}
+                    formatter={(value: number) => [formatCurrency(value), "Valor"]}
+                  />
+                  <Legend
+                    wrapperStyle={{ fontSize: 12, color: "hsl(215 12% 50%)" }}
+                    formatter={(value) => <span style={{ color: "hsl(215 12% 70%)" }}>{value}</span>}
+                  />
+                </PieChart>
               </ResponsiveContainer>
             ) : (
               <div className="h-full flex items-center justify-center text-muted-foreground text-sm">Sem dados no período</div>

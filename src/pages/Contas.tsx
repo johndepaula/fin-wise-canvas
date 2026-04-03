@@ -49,6 +49,14 @@ export default function Contas() {
     return { total, paid, remaining: total - paid };
   }, [bills]);
 
+  const sortedBills = useMemo(() => {
+    return [...bills].sort((a, b) => {
+      const dateA = new Date(a.due_date + "T00:00:00").getTime();
+      const dateB = new Date(b.due_date + "T00:00:00").getTime();
+      return dateA - dateB;
+    });
+  }, [bills]);
+
   const openNew = useCallback(() => {
     setEditingId(null);
     setForm(emptyForm);
@@ -134,9 +142,9 @@ export default function Contas() {
       </div>
 
       {/* Table */}
-      <Card className="bg-card border-border overflow-hidden">
+          <Card className="bg-card border-border overflow-hidden">
         <CardContent className="p-0">
-          {bills.length === 0 ? (
+          {sortedBills.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground">
               <p className="text-lg font-medium mb-1">Nenhuma conta encontrada</p>
               <p className="text-sm">Adicione sua primeira conta a pagar.</p>
@@ -156,7 +164,7 @@ export default function Contas() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bills.map((b) => {
+                  {sortedBills.map((b) => {
                     const status = getDueStatus(b.due_date);
                     const remaining = b.amount - b.amount_paid;
                     return (
