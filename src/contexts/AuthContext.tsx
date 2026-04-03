@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,23 +14,23 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialSessionLoaded = useRef(false);
 
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-      } catch (error) {
-        console.error("Erro ao carregar sessão:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    initAuth();
-
+    // Set up listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      // Only set loading=false from listener if getSession already resolved
+      if (initialSessionLoaded.current) {
+        setLoading(false);
+      }
+    });
+
+    // Then restore session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      initialSessionLoaded.current = true;
+      setSession(session);
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
