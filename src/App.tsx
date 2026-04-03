@@ -44,7 +44,7 @@ function ProtectedRoutes() {
         hasShownWelcome.current = true;
         sessionStorage.setItem("welcome_shown", "true");
         setShowWelcome(true);
-        setTimeout(() => setShowWelcome(false), 2500);
+        setTimeout(() => setShowWelcome(false), 2000);
       } else {
         hasShownWelcome.current = true;
       }
@@ -63,16 +63,17 @@ function ProtectedRoutes() {
 
   if (showWelcome) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4 text-center px-4">
-        <h1 className="text-3xl font-bold text-foreground animate-fade-in" style={{ animationDuration: "0.6s" }}>
-          SEJA BEM VINDO
-        </h1>
-        <img
-          src="/logo.png"
-          alt="Logo do Sistema"
-          className="h-48 w-auto max-w-full object-contain animate-scale-in"
-          style={{ animationDuration: "0.8s", animationDelay: "0.3s", animationFillMode: "both" }}
-        />
+      <div className="animate-welcome-container min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="flex flex-col items-center justify-center gap-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground animate-welcome-text">
+            SEJA BEM VINDO
+          </h1>
+          <img
+            src="/logo.png"
+            alt="Logo do Sistema"
+            className="h-32 sm:h-40 w-auto max-w-full object-contain animate-welcome-logo"
+          />
+        </div>
       </div>
     );
   }
