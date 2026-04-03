@@ -35,19 +35,18 @@ function getWelcomeMessage() {
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
-  const hasShownWelcome = useRef(false);
+  const prevSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (session && !loading && !hasShownWelcome.current) {
-      const alreadyShown = sessionStorage.getItem("welcome_shown");
-      if (!alreadyShown) {
-        hasShownWelcome.current = true;
-        sessionStorage.setItem("welcome_shown", "true");
-        setShowWelcome(true);
-        setTimeout(() => setShowWelcome(false), 2000);
-      } else {
-        hasShownWelcome.current = true;
-      }
+    const currentSessionId = session?.user?.id || null;
+    const prevSessionId = prevSessionRef.current;
+
+    if (session && !loading && currentSessionId !== prevSessionId) {
+      prevSessionRef.current = currentSessionId;
+      setShowWelcome(true);
+      setTimeout(() => setShowWelcome(false), 2000);
+    } else if (!session) {
+      prevSessionRef.current = null;
     }
   }, [session, loading]);
 
