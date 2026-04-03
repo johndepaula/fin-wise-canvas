@@ -242,8 +242,8 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(224 12% 18%)" />
                   <XAxis dataKey="categoria" tick={{ fill: "hsl(215 12% 50%)", fontSize: 10 }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} />
-                  <Bar dataKey="valor" fill={settings.category_chart_color} radius={[6, 6, 0, 0]} />
+                  <Tooltip contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }} formatter={(value: number) => [formatCurrency(value), "Valor"]} />
+                  <Bar dataKey="valor" fill={settings.category_chart_color} radius={[6, 6, 0, 0]} animationDuration={800} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
