@@ -99,9 +99,9 @@ export default function Registros() {
     await descHistory.save(form.descricao);
 
     if (editingId) {
-      await editar(editingId, { tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await editar(editingId, { tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: form.data + "T12:00:00" });
     } else {
-      await adicionar({ tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: new Date(form.data).toISOString() });
+      await adicionar({ tipo: form.tipo, valor, categoria: categoriaFinal, descricao: form.descricao, data: form.data + "T12:00:00" });
     }
     setModalOpen(false);
   };
