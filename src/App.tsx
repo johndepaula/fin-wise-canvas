@@ -44,7 +44,7 @@ function ProtectedRoutes() {
         hasShownWelcome.current = true;
         sessionStorage.setItem("welcome_shown", "true");
         setShowWelcome(true);
-        setTimeout(() => setShowWelcome(false), 2500);
+        setTimeout(() => setShowWelcome(false), 2000);
       } else {
         hasShownWelcome.current = true;
       }
