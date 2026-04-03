@@ -1,42 +1,44 @@
 
 
-## Plano — Animação de boas-vindas no login com idioma automático
+## Plano — Melhorias incrementais sem alterar UI
 
-### O que será feito
+### 1. Corrigir animação de boas-vindas (App.tsx)
 
-Após o login bem-sucedido, exibir uma tela de splash animada com:
-- Mensagem "SEJA BEM-VINDO" (traduzida automaticamente com base no idioma do navegador)
-- Logo da plataforma com animação
-- Duração de ~2.5 segundos antes de redirecionar ao Dashboard
+- Usar a logo correta: `/lovable-uploads/853f9d2e-1310-4b8f-bfcd-0aa85d8a98ef.png`
+- Usar a função `getWelcomeMessage()` que já existe (em vez do texto hardcoded "SEJA BEM VINDO")
+- Reduzir duração para 2 segundos conforme pedido
 
-### Traduções suportadas
+### 2. Corrigir data em Meus Registros (Registros.tsx)
 
-Usar `navigator.language` para detectar o idioma:
-- `pt` → "SEJA BEM-VINDO"
-- `en` → "WELCOME"
-- `es` → "BIENVENIDO"
-- `fr` → "BIENVENUE"
-- `de` → "WILLKOMMEN"
-- `it` → "BENVENUTO"
-- `ja` → "ようこそ"
-- `zh` → "欢迎"
-- Fallback → "WELCOME"
+**Problema:** `new Date(form.data).toISOString()` converte a data local para UTC, causando shift de -1 dia.
 
-### Alterações por arquivo
+**Solução:** Salvar a data como `form.data + "T12:00:00"` (meio-dia local) para evitar o deslocamento de fuso. Aplicar em `handleSave` tanto para criar quanto para editar.
 
-**`src/App.tsx`**
-- Adicionar estado `showWelcome` no `ProtectedRoutes`
-- Quando `session` existir e `showWelcome` for true, exibir tela de splash com logo + mensagem traduzida por 2.5s
-- Após o tempo, mostrar as rotas normais
-- Usar `useRef` para garantir que a animação só aparece uma vez por sessão (não ao navegar entre páginas)
+Também corrigir a exibição na tabela: usar `r.data.slice(0, 10)` com split manual para formatar, evitando `new Date()` que re-aplica o problema de timezone.
 
-**`src/pages/Auth.tsx`**
-- Manter splash inicial (ao abrir a página) como está
-- Nenhuma alteração necessária — a animação pós-login será gerenciada no `ProtectedRoutes`
+### 3. Garantir ordenação em Contas (já funciona)
 
-### Detalhes técnicos
+O hook `useBills` já ordena por `due_date` ascending. A tabela em `Contas.tsx` renderiza na ordem do array. Nenhuma alteração necessária aqui.
 
-- A função de tradução será um map simples baseado em `navigator.language.slice(0, 2)`
-- A animação usará as classes existentes: `animate-fade-in-up`, `animate-pulse`
-- Um `sessionStorage` flag evita que a animação repita ao recarregar a página (só aparece no momento do login)
+### 4. Melhorias nos gráficos do Dashboard (Dashboard.tsx)
+
+Sem alterar layout ou posição:
+
+- **Gráfico de linha → Gráfico de área**: Trocar `LineChart`/`Line` por `AreaChart`/`Area` com gradiente (usando `<defs>` + `<linearGradient>`)
+- **Barras**: Adicionar `animationDuration={800}` e manter `radius={[6,6,0,0]}` (já existe)
+- **Tooltips**: Adicionar `formatter` para exibir valores formatados em R$
+- **Area chart**: Usar `fillOpacity` com gradiente suave da cor do chart para transparente
+
+### Arquivos modificados
+
+| Arquivo | Alteração |
+|---|---|
+| `src/App.tsx` | Logo correta, texto traduzido, duração 2s |
+| `src/pages/Registros.tsx` | Fix timezone na data (linhas 102-104) |
+| `src/pages/Dashboard.tsx` | AreaChart com gradiente, tooltips formatados |
+
+### O que NÃO muda
+- Layout, posição de componentes, sidebar, perfil
+- Nenhuma tela nova
+- Nenhum componente removido
 
