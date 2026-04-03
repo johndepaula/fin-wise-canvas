@@ -13,6 +13,7 @@ import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 import { formatCurrencyBRL } from "@/lib/currency";
+import { FinancialGoals } from "@/components/FinancialGoals";
 
 type Periodo = string;
 
@@ -273,6 +274,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Financial Goals */}
+      <FinancialGoals />
     </div>
   );
 }
