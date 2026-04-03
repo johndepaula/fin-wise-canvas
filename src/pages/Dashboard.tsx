@@ -274,6 +274,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Financial Goals */}
+      <FinancialGoals />
     </div>
   );
 }
