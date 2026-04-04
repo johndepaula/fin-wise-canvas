@@ -20,7 +20,8 @@ import { Separator } from "@/components/ui/separator";
 const mainItems = [
 { title: "Dashboard", url: "/", icon: LayoutDashboard },
 { title: "Meus Registros", url: "/registros", icon: Receipt },
-{ title: "Contas", url: "/contas", icon: Wallet }];
+{ title: "Contas", url: "/contas", icon: Wallet },
+];
 
 
 export function AppSidebar() {
