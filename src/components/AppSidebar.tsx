@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator, BarChart3 } from "lucide-react";
 import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -70,6 +70,18 @@ export function AppSidebar() {
               )}
               <SidebarMenuItem>
                 <CalculatorModal collapsed={collapsed} />
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to="/relatorios"
+                    className="hover:bg-accent/60 transition-colors duration-150"
+                    activeClassName="bg-accent text-foreground font-medium"
+                    onClick={closeMobile}>
+                    <BarChart3 className="mr-2.5 h-4 w-4" />
+                    {!collapsed && <span>Relatórios</span>}
+                  </NavLink>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>

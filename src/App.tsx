@@ -11,6 +11,7 @@ import Registros from "./pages/Registros";
 import Contas from "./pages/Contas";
 import Configuracoes from "./pages/Configuracoes";
 import Perfil from "./pages/Perfil";
+import Relatorios from "./pages/Relatorios";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -84,6 +85,7 @@ function ProtectedRoutes() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/registros" element={<Registros />} />
           <Route path="/contas" element={<Contas />} />
+          <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
           <Route path="*" element={<NotFound />} />
