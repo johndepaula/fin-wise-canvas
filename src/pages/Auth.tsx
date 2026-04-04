@@ -5,13 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,11 +32,34 @@ export default function Auth() {
       if (error) {
         toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
       } else {
-        toast({ title: "Conta criada!", description: "Verifique seu email para confirmar o cadastro." });
+        setShowVerification(true);
       }
     }
     setLoading(false);
   };
+
+  if (showVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm animate-fade-in-up">
+          <Card className="bg-card border-border">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Verifique seu email</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Enviamos um link de confirmação para <strong className="text-foreground">{email}</strong>. Verifique sua caixa de entrada e clique no link para ativar sua conta.
+              </p>
+              <Button variant="outline" className="w-full" onClick={() => { setShowVerification(false); setIsLogin(true); }}>
+                Ir para login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
