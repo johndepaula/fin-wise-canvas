@@ -283,7 +283,7 @@ export default function Dashboard() {
           <CardContent className="h-[300px]">
             {distribuicaoFinanceira.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart className="text-destructive-foreground">
                   <Pie
                     data={distribuicaoFinanceira}
                     cx="50%"
