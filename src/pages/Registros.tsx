@@ -190,7 +190,7 @@ export default function Registros() {
                 <TableBody>
                   {filtrados.map((r) => (
                     <TableRow key={r.id} className="border-border hover:bg-accent/30 transition-colors">
-                      <TableCell className="text-sm">{new Date(r.data).toLocaleDateString("pt-BR")}</TableCell>
+                      <TableCell className="text-sm">{(() => { const d = r.data.slice(0, 10).split("-"); return `${d[2]}/${d[1]}/${d[0]}`; })()}</TableCell>
                       <TableCell>
                         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${r.tipo === "entrada" ? "bg-income/10 text-income" : "bg-expense/10 text-expense"}`}>
                           {r.tipo === "entrada" ? "Entrada" : "Saída"}

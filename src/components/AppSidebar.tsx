@@ -1,4 +1,5 @@
-import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator } from "lucide-react";
+import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -19,7 +20,8 @@ import { Separator } from "@/components/ui/separator";
 const mainItems = [
 { title: "Dashboard", url: "/", icon: LayoutDashboard },
 { title: "Meus Registros", url: "/registros", icon: Receipt },
-{ title: "Contas", url: "/contas", icon: Wallet }];
+{ title: "Contas", url: "/contas", icon: Wallet },
+];
 
 
 export function AppSidebar() {
@@ -66,6 +68,9 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <CalculatorModal collapsed={collapsed} />
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

@@ -26,7 +26,7 @@ export function useRegistros() {
           valor: Number(r.valor),
           categoria: r.categoria,
           descricao: r.descricao,
-          data: r.data,
+          data: typeof r.data === "string" ? r.data.slice(0, 10) : r.data,
           criado_em: r.criado_em,
         }))
       );

@@ -416,7 +416,7 @@ export default function Dashboard() {
           <CardContent className="h-[300px]">
             {distribuicaoFinanceira.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart className="text-destructive-foreground">
                   <Pie
                     data={distribuicaoFinanceira}
                     cx="50%"
@@ -434,10 +434,12 @@ export default function Dashboard() {
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
-                  <Tooltip
-                    contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "hsl(210 20% 92%)", fontSize: 12 }}
-                    formatter={(value: number) => [formatCurrency(value), "Valor"]}
-                  />
+                    <Tooltip
+                     contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "#FFFFFF", fontSize: 12 }}
+                     itemStyle={{ color: "#FFFFFF" }}
+                     labelStyle={{ color: "#FFFFFF" }}
+                     formatter={(value: number) => [formatCurrency(value), "Valor"]}
+                   />
                   <Legend
                     wrapperStyle={{ fontSize: 12, color: "hsl(215 12% 50%)" }}
                     formatter={(value) => <span style={{ color: "hsl(215 12% 70%)" }}>{value}</span>}
