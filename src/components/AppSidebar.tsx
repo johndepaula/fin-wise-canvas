@@ -69,9 +69,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => {}}>
-                  <CalculatorModal collapsed={collapsed} />
-                </SidebarMenuButton>
+                <CalculatorModal collapsed={collapsed} />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
