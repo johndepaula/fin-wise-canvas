@@ -52,14 +52,14 @@ export default function Perfil() {
     setIsSaving(true);
     try {
       let currentAvatarUrl = profile?.avatar_url || null;
+
       if (avatarFile) {
         const uploadedUrl = await uploadAvatar(avatarFile);
-        if (uploadedUrl) {
-           currentAvatarUrl = uploadedUrl;
-        }
+        if (uploadedUrl) currentAvatarUrl = uploadedUrl;
       }
+
       await updateProfile({ display_name: name, avatar_url: currentAvatarUrl });
-      setAvatarFile(null); // Limpa o arquivo após o upload com sucesso
+      setAvatarFile(null);
     } catch (error) {
       console.error("Erro ao salvar perfil:", error);
     } finally {
@@ -74,6 +74,7 @@ export default function Perfil() {
 
       <Card className="bg-card border-border">
         <CardContent className="p-6 space-y-6">
+          {/* Avatar */}
           <div className="flex items-center gap-4">
             <div className="relative group">
               {previewUrl ? (

@@ -1,9 +1,9 @@
-import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator } from "lucide-react";
+import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
-import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useCallback } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,19 +20,17 @@ import { Separator } from "@/components/ui/separator";
 const mainItems = [
 { title: "Dashboard", url: "/", icon: LayoutDashboard },
 { title: "Meus Registros", url: "/registros", icon: Receipt },
-{ title: "Contas", url: "/contas", icon: Wallet }];
+{ title: "Contas", url: "/contas", icon: Wallet },
+];
 
 
 export function AppSidebar() {
-  const { state } = useSidebar();
+  const { state, setOpenMobile } = useSidebar();
   const collapsed = state === "collapsed";
-  const { user, signOut } = useAuth();
-  const { profile } = useProfile();
+  const { signOut } = useAuth();
   const navigate = useNavigate();
 
-  const email = user?.email ?? "";
-  const initials = email.slice(0, 2).toUpperCase();
-  const displayName = profile?.display_name || email.split("@")[0];
+  const closeMobile = useCallback(() => setOpenMobile(false), [setOpenMobile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -41,33 +39,14 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
-      <SidebarContent className="pt-6">
-        <div className="flex items-center gap-2.5 px-4 mb-4">
+      <SidebarContent className="pt-4">
+        <div className="px-4 mb-2 flex justify-center">
           <img
             src="/logo.png"
-            alt="Finplex Logo"
-            className="h-14 w-auto object-contain shrink-0"
-            onError={(e) => {
-              // Fallback visual case the logo isn't uploaded yet
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.parentElement?.insertAdjacentHTML('afterbegin', '<div class="h-14 w-14 rounded-lg bg-primary flex items-center justify-center shrink-0"><span class="text-primary-foreground font-bold text-2xl">F</span></div>');
-            }} />
-          
-          {!collapsed &&
-          <span className="font-semibold text-foreground text-lg tracking-tight">​</span>
-          }
+            alt="Logo"
+            className={collapsed ? "h-7 w-auto object-contain" : "h-10 w-auto object-contain"}
+          />
         </div>
-        {/* Profile block */}
-        <div className="flex items-center gap-2.5 px-4 mb-4">
-          <Avatar className="h-8 w-8 shrink-0">
-            {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
-            <AvatarFallback className="text-xs bg-muted">{initials}</AvatarFallback>
-          </Avatar>
-          {!collapsed &&
-          <span className="text-sm text-foreground truncate">{displayName}</span>
-          }
-        </div>
-
         <Separator className="mb-3 mx-4 bg-border/50" />
 
         <SidebarGroup>
@@ -80,7 +59,8 @@ export function AppSidebar() {
                     to={item.url}
                     end={item.url === "/"}
                     className="hover:bg-accent/60 transition-colors duration-150"
-                    activeClassName="bg-accent text-foreground font-medium">
+                    activeClassName="bg-accent text-foreground font-medium"
+                    onClick={closeMobile}>
                     
                       <item.icon className="mr-2.5 h-4 w-4" />
                       {!collapsed && <span>{item.title}</span>}
@@ -88,6 +68,9 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <CalculatorModal collapsed={collapsed} />
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -101,7 +84,8 @@ export function AppSidebar() {
               <NavLink
                 to="/configuracoes"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <Settings className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Configurações</span>}
@@ -113,7 +97,8 @@ export function AppSidebar() {
               <NavLink
                 to="/perfil"
                 className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium">
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
                 
                 <User className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Meu Perfil</span>}

@@ -1,24 +1,42 @@
 
 
-## Plano — Negrito nos valores + Município no clima
+## Plano — Animação de boas-vindas no login com idioma automático
 
-### 1. Negrito nos valores da InfoBar
+### O que será feito
 
-No `DashboardInfoBar.tsx`, envolver os valores dinâmicos (hora, data, condição climática, dias restantes, valor/dia) em `<span className="font-semibold text-foreground">` para destacá-los visualmente, mantendo os labels e ícones com a cor atual `text-muted-foreground`.
+Após o login bem-sucedido, exibir uma tela de splash animada com:
+- Mensagem "SEJA BEM-VINDO" (traduzida automaticamente com base no idioma do navegador)
+- Logo da plataforma com animação
+- Duração de ~2.5 segundos antes de redirecionar ao Dashboard
 
-### 2. Município no clima
+### Traduções suportadas
 
-No `useWeather.ts`:
-- Adicionar `city` ao estado e à interface `WeatherData`
-- Usar reverse geocoding gratuito via `https://nominatim.openstreetmap.org/reverse?lat=X&lon=Y&format=json` para obter o nome do município a partir das coordenadas
-- Salvar o `city` na tabela `user_location` junto com lat/lng
-- Retornar `city` no hook
+Usar `navigator.language` para detectar o idioma:
+- `pt` → "SEJA BEM-VINDO"
+- `en` → "WELCOME"
+- `es` → "BIENVENIDO"
+- `fr` → "BIENVENUE"
+- `de` → "WILLKOMMEN"
+- `it` → "BENVENUTO"
+- `ja` → "ようこそ"
+- `zh` → "欢迎"
+- Fallback → "WELCOME"
 
-No `DashboardInfoBar.tsx`:
-- Exibir o município antes da temperatura: `São Paulo — 25°C Limpo ☀️`
+### Alterações por arquivo
 
-### Arquivos alterados
+**`src/App.tsx`**
+- Adicionar estado `showWelcome` no `ProtectedRoutes`
+- Quando `session` existir e `showWelcome` for true, exibir tela de splash com logo + mensagem traduzida por 2.5s
+- Após o tempo, mostrar as rotas normais
+- Usar `useRef` para garantir que a animação só aparece uma vez por sessão (não ao navegar entre páginas)
 
-- `src/hooks/useWeather.ts` — adicionar `city`, chamada ao Nominatim, salvar no upsert
-- `src/components/DashboardInfoBar.tsx` — negrito nos valores + exibir `weather.city`
+**`src/pages/Auth.tsx`**
+- Manter splash inicial (ao abrir a página) como está
+- Nenhuma alteração necessária — a animação pós-login será gerenciada no `ProtectedRoutes`
+
+### Detalhes técnicos
+
+- A função de tradução será um map simples baseado em `navigator.language.slice(0, 2)`
+- A animação usará as classes existentes: `animate-fade-in-up`, `animate-pulse`
+- Um `sessionStorage` flag evita que a animação repita ao recarregar a página (só aparece no momento do login)
 

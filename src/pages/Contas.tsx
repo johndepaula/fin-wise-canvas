@@ -12,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
+import { CurrencyInput } from "@/components/CurrencyInput";
 
 interface FormData {
   account_type: string;
@@ -20,7 +22,7 @@ interface FormData {
   amount_paid: string;
 }
 
-const emptyForm: FormData = { account_type: "", due_date: "", amount: "", amount_paid: "0" };
+const emptyForm: FormData = { account_type: "", due_date: new Date().toISOString().slice(0, 10), amount: "", amount_paid: "0" };
 
 function getDueStatus(due_date: string) {
   const now = new Date();
@@ -47,6 +49,14 @@ export default function Contas() {
     return { total, paid, remaining: total - paid };
   }, [bills]);
 
+  const sortedBills = useMemo(() => {
+    return [...bills].sort((a, b) => {
+      const dateA = new Date(a.due_date + "T00:00:00").getTime();
+      const dateB = new Date(b.due_date + "T00:00:00").getTime();
+      return dateA - dateB;
+    });
+  }, [bills]);
+
   const openNew = useCallback(() => {
     setEditingId(null);
     setForm(emptyForm);
@@ -56,7 +66,12 @@ export default function Contas() {
 
   const openEdit = useCallback((b: Bill) => {
     setEditingId(b.id);
-    setForm({ account_type: b.account_type, due_date: b.due_date, amount: b.amount.toString(), amount_paid: b.amount_paid.toString() });
+    setForm({
+      account_type: b.account_type,
+      due_date: b.due_date,
+      amount: b.amount.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      amount_paid: b.amount_paid.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    });
     setAccountSuggestions([]);
     setModalOpen(true);
   }, []);
@@ -67,8 +82,8 @@ export default function Contas() {
   };
 
   const handleSave = async () => {
-    const amount = parseFloat(form.amount);
-    const amount_paid = parseFloat(form.amount_paid) || 0;
+    const amount = parseCurrencyInput(form.amount);
+    const amount_paid = parseCurrencyInput(form.amount_paid);
     if (!form.account_type || !form.due_date || !amount) return;
 
     await accountHistory.save(form.account_type);
@@ -81,7 +96,7 @@ export default function Contas() {
     setModalOpen(false);
   };
 
-  const fmt = (v: number) => `R$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`;
+  const fmt = formatCurrencyBRL;
 
   if (loading) {
     return (
@@ -110,7 +125,7 @@ export default function Contas() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total a Pagar", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
+          { label: "Valor total em contas", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
           { label: "Total Pago", value: fmt(totals.paid), icon: CheckCircle, color: "text-income" },
           { label: "Restante", value: fmt(totals.remaining), icon: AlertTriangle, color: totals.remaining > 0 ? "text-expense" : "text-income" },
         ].map((kpi) => (
@@ -127,9 +142,9 @@ export default function Contas() {
       </div>
 
       {/* Table */}
-      <Card className="bg-card border-border overflow-hidden">
+          <Card className="bg-card border-border overflow-hidden">
         <CardContent className="p-0">
-          {bills.length === 0 ? (
+          {sortedBills.length === 0 ? (
             <div className="py-16 text-center text-muted-foreground">
               <p className="text-lg font-medium mb-1">Nenhuma conta encontrada</p>
               <p className="text-sm">Adicione sua primeira conta a pagar.</p>
@@ -149,7 +164,7 @@ export default function Contas() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {bills.map((b) => {
+                  {sortedBills.map((b) => {
                     const status = getDueStatus(b.due_date);
                     const remaining = b.amount - b.amount_paid;
                     return (
@@ -214,11 +229,11 @@ export default function Contas() {
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount} onChange={(v) => setForm((f) => ({ ...f, amount: v }))} className="bg-background border-border mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Valor Pago (R$)</Label>
-              <Input type="number" step="0.01" min="0" placeholder="0,00" value={form.amount_paid} onChange={(e) => setForm((f) => ({ ...f, amount_paid: e.target.value }))} className="bg-background border-border mt-1" />
+              <CurrencyInput value={form.amount_paid} onChange={(v) => setForm((f) => ({ ...f, amount_paid: v }))} className="bg-background border-border mt-1" />
             </div>
           </div>
           <DialogFooter>
