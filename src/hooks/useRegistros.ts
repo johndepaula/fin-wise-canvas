@@ -30,7 +30,6 @@ export function useRegistros() {
           criado_em: r.criado_em,
         }))
       );
-      );
     }
     setLoading(false);
   }, [user]);
