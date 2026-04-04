@@ -11,6 +11,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
 
@@ -27,7 +28,12 @@ export default function Auth() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: { 
+          emailRedirectTo: window.location.origin,
+          data: {
+            referral_code: referralCode.trim() || null
+          }
+        },
       });
       if (error) {
         toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
@@ -102,6 +108,23 @@ export default function Auth() {
                   className="bg-background border-border mt-1"
                 />
               </div>
+              
+              {!isLogin && (
+                <div className="animate-fade-in-up">
+                  <Label className="text-xs text-muted-foreground">Código de indicação (opcional)</Label>
+                  <Input
+                    type="text"
+                    placeholder="Ex: USER123"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                    className="bg-background border-border mt-1 transition-all"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Se você foi convidado por um amigo, insira o código aqui.
+                  </p>
+                </div>
+              )}
+
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                 {isLogin ? "Entrar" : "Criar conta"}
