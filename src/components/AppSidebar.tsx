@@ -73,6 +73,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="pb-4">
+        <div className="flex justify-center mb-1">
+          <CalculatorModal />
+        </div>
         <Separator className="mb-3 bg-border/50" />
         <SidebarMenu>
           <SidebarMenuItem>
