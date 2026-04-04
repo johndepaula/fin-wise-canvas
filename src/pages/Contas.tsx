@@ -22,7 +22,7 @@ interface FormData {
   amount_paid: string;
 }
 
-const emptyForm: FormData = { account_type: "", due_date: "", amount: "", amount_paid: "0" };
+const emptyForm: FormData = { account_type: "", due_date: new Date().toISOString().slice(0, 10), amount: "", amount_paid: "0" };
 
 function getDueStatus(due_date: string) {
   const now = new Date();
