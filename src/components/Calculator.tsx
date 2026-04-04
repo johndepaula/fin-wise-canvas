@@ -10,7 +10,7 @@ const buttons = [
   ["C", "0", ".", "+"],
 ];
 
-export function CalculatorModal() {
+export function CalculatorModal({ collapsed }: { collapsed?: boolean }) {
   const [display, setDisplay] = useState("0");
   const [prev, setPrev] = useState<number | null>(null);
   const [op, setOp] = useState<string | null>(null);
