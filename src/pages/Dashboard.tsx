@@ -108,10 +108,6 @@ export default function Dashboard() {
       data.push({ name: "Despesas", valor: Math.round(despesas * 100) / 100, color: PIE_COLORS_EXPENSE });
     }
     
-    if (saldo !== 0) {
-      data.push({ name: saldo > 0 ? "Saldo Positivo" : "Saldo Negativo", valor: Math.round(Math.abs(saldo) * 100) / 100, color: PIE_COLORS_SALDO });
-    }
-    
     return data;
   }, [filtrados]);
 
@@ -296,13 +292,14 @@ export default function Dashboard() {
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
-                    outerRadius={110}
+                    outerRadius={90}
                     paddingAngle={3}
                     dataKey="valor"
                     animationBegin={0}
                     animationDuration={800}
                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                    labelLine={false}
+                    labelLine={true}
+                    labelStyle={{ fontSize: "12px", fill: "hsl(215 12% 70%)" }}
                   >
                     {distribuicaoFinanceira.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
