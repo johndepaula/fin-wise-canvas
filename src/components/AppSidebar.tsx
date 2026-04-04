@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator } from "lucide-react";
 import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
