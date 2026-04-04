@@ -61,9 +61,10 @@ export function CalculatorModal({ collapsed }: { collapsed?: boolean }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9" title="Calculadora">
-          <CalcIcon className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center w-full cursor-pointer">
+          <CalcIcon className="mr-2.5 h-4 w-4 shrink-0" />
+          {!collapsed && <span>Calculadora</span>}
+        </div>
       </DialogTrigger>
       <DialogContent className="bg-card border-border sm:max-w-xs">
         <DialogHeader>
