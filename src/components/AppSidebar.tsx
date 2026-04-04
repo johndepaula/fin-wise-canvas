@@ -1,4 +1,5 @@
 import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings } from "lucide-react";
+import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -72,6 +73,9 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="pb-4">
+        <div className="flex justify-center mb-1">
+          <CalculatorModal />
+        </div>
         <Separator className="mb-3 bg-border/50" />
         <SidebarMenu>
           <SidebarMenuItem>

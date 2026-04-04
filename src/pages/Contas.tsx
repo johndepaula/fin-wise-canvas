@@ -22,7 +22,7 @@ interface FormData {
   amount_paid: string;
 }
 
-const emptyForm: FormData = { account_type: "", due_date: "", amount: "", amount_paid: "0" };
+const emptyForm: FormData = { account_type: "", due_date: new Date().toISOString().slice(0, 10), amount: "", amount_paid: "0" };
 
 function getDueStatus(due_date: string) {
   const now = new Date();
@@ -125,7 +125,7 @@ export default function Contas() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total a Pagar", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
+          { label: "Valor total em contas", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
           { label: "Total Pago", value: fmt(totals.paid), icon: CheckCircle, color: "text-income" },
           { label: "Restante", value: fmt(totals.remaining), icon: AlertTriangle, color: totals.remaining > 0 ? "text-expense" : "text-income" },
         ].map((kpi) => (

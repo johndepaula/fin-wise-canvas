@@ -65,7 +65,7 @@ function ProtectedRoutes() {
       <div className="animate-welcome-container min-h-screen flex flex-col items-center justify-center bg-background">
         <div className="flex flex-col items-center justify-center gap-6">
           <h1 className="text-4xl sm:text-5xl font-bold text-foreground animate-welcome-text">
-            SEJA BEM VINDO
+            {getWelcomeMessage()}
           </h1>
           <img
             src="/logo.png"
