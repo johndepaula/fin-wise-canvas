@@ -68,15 +68,17 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => {}}>
+                  <CalculatorModal collapsed={collapsed} />
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
       <SidebarFooter className="pb-4">
-        <div className="flex justify-center mb-1">
-          <CalculatorModal />
-        </div>
         <Separator className="mb-3 bg-border/50" />
         <SidebarMenu>
           <SidebarMenuItem>
