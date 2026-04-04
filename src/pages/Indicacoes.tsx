@@ -20,14 +20,23 @@ export default function Indicacoes() {
     } else if (user?.id) {
       // Fallback: fetch directly if not in the cached profile type yet
       const fetchCode = async () => {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (data && (data as any).referral_code) {
-          setReferralCode((data as any).referral_code);
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (data && (data as any).referral_code) {
+            setReferralCode((data as any).referral_code);
+          } else {
+            // Fallback case: if SQL migration wasn't run or code is missing
+            const fallbackCode = `USER${user.id.substring(0, 6).toUpperCase()}`;
+            setReferralCode(fallbackCode);
+          }
+        } catch (err) {
+          const fallbackCode = `USER${user.id.substring(0, 6).toUpperCase()}`;
+          setReferralCode(fallbackCode);
         }
       };
       fetchCode();
