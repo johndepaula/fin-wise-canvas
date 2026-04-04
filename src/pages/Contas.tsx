@@ -125,7 +125,7 @@ export default function Contas() {
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: "Total a Pagar", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
+          { label: "Valor total em contas", value: fmt(totals.total), icon: Wallet, color: "text-foreground" },
           { label: "Total Pago", value: fmt(totals.paid), icon: CheckCircle, color: "text-income" },
           { label: "Restante", value: fmt(totals.remaining), icon: AlertTriangle, color: totals.remaining > 0 ? "text-expense" : "text-income" },
         ].map((kpi) => (
