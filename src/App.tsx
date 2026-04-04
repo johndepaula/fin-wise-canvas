@@ -13,6 +13,7 @@ import Configuracoes from "./pages/Configuracoes";
 import Perfil from "./pages/Perfil";
 import Relatorios from "./pages/Relatorios";
 import Auth from "./pages/Auth";
+import Indicacoes from "./pages/Indicacoes";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,7 @@ function ProtectedRoutes() {
           <Route path="/relatorios" element={<Relatorios />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="/perfil" element={<Perfil />} />
+          <Route path="/indicacoes" element={<Indicacoes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </AppLayout>
