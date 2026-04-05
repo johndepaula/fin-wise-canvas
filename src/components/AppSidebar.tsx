@@ -131,6 +131,19 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to="/feedback"
+                className="hover:bg-accent/60 transition-colors duration-150"
+                activeClassName="bg-accent text-foreground font-medium"
+                onClick={closeMobile}>
+                
+                <MessageSquare className="mr-2.5 h-4 w-4" />
+                {!collapsed && <span>Feedback</span>}
+              </NavLink>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
             <SidebarMenuButton
               className="hover:bg-accent/60 text-muted-foreground transition-colors duration-150 cursor-pointer"
               onClick={handleSignOut}>
