@@ -41,26 +41,38 @@ function inferCategory(text: string): string {
 }
 
 function parseValue(text: string): number | null {
-  // Match patterns like "55 reais e 39 centavos", "55,39", "55.39", "R$ 55", "55 reais"
   const normalized = text
     .toLowerCase()
     .replace(/r\$\s*/g, "")
     .replace(/\./g, "")
     .replace(",", ".");
 
-  // "X reais e Y centavos"
   const reaisMatch = normalized.match(/(\d+)\s*reais?\s*e?\s*(\d+)\s*centavos?/);
   if (reaisMatch) return parseFloat(`${reaisMatch[1]}.${reaisMatch[2].padStart(2, "0")}`);
 
-  // "X reais"
   const simpleReais = normalized.match(/(\d+)\s*reais?/);
   if (simpleReais) return parseFloat(simpleReais[1]);
 
-  // Pure number
   const numMatch = normalized.match(/(\d+\.?\d*)/);
   if (numMatch) return parseFloat(numMatch[1]);
 
   return null;
+}
+
+function speak(text: string) {
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "pt-BR";
+    utterance.rate = 1.1;
+    window.speechSynthesis.speak(utterance);
+  }
+}
+
+interface PendingCommand {
+  tipo: "entrada" | "saida";
+  descricao: string;
+  categoria: string;
 }
 
 export function VoiceAssistant() {
@@ -69,81 +81,198 @@ export function VoiceAssistant() {
   const [listening, setListening] = useState(false);
   const [status, setStatus] = useState("");
   const recognitionRef = useRef<any>(null);
+  const pendingRef = useRef<PendingCommand | null>(null);
 
   const SpeechRecognition =
     typeof window !== "undefined"
       ? (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
       : null;
 
-  const processCommand = useCallback(
-    async (transcript: string) => {
-      const lower = transcript.toLowerCase().trim();
-      setStatus(`"${transcript}"`);
+  const startListening = useCallback(() => {
+    if (!SpeechRecognition) return;
+    const recognition = new SpeechRecognition();
+    recognition.lang = "pt-BR";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognitionRef.current = recognition;
 
-      // Navigation commands
-      if (lower.includes("abrir dashboard") || lower.includes("ir para dashboard")) {
-        navigate("/");
-        toast({ title: "🎙️ Navegando", description: "Abrindo Dashboard" });
+    recognition.onstart = () => {
+      setListening(true);
+      setStatus("🎙️ Ouvindo...");
+    };
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      handleTranscript(transcript);
+    };
+
+    recognition.onerror = () => {
+      setListening(false);
+      setStatus("");
+      toast({ title: "Erro no microfone", description: "Tente novamente.", variant: "destructive" });
+    };
+
+    recognition.onend = () => {
+      setListening(false);
+    };
+
+    recognition.start();
+  }, [SpeechRecognition]);
+
+  const listenForValue = useCallback(() => {
+    if (!SpeechRecognition) return;
+    // Small delay so TTS finishes before listening
+    setTimeout(() => {
+      const recognition = new SpeechRecognition();
+      recognition.lang = "pt-BR";
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setListening(true);
+        setStatus("🎙️ Aguardando valor...");
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        handleValueResponse(transcript);
+      };
+
+      recognition.onerror = () => {
+        setListening(false);
+        setStatus("");
+        pendingRef.current = null;
+      };
+
+      recognition.onend = () => {
+        setListening(false);
+      };
+
+      recognition.start();
+    }, 1500);
+  }, [SpeechRecognition]);
+
+  const saveRecord = useCallback(async (tipo: string, valor: number, categoria: string, descricao: string) => {
+    if (!user) return;
+    const data = new Date().toISOString().slice(0, 10);
+
+    const { error } = await supabase.from("financial_records").insert({
+      user_id: user.id,
+      tipo,
+      valor,
+      categoria,
+      descricao,
+      data,
+    });
+
+    if (error) {
+      const msg = "Erro ao registrar. Tente novamente.";
+      speak(msg);
+      setStatus(`❌ ${msg}`);
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } else {
+      const msg = `Registro adicionado! ${tipo === "entrada" ? "Entrada" : "Saída"} de ${valor.toFixed(2)} reais em ${categoria}.`;
+      speak(msg);
+      setStatus(`✅ R$ ${valor.toFixed(2)} → ${categoria}`);
+      toast({ title: "🎙️ Registro adicionado!", description: `${tipo === "entrada" ? "Entrada" : "Saída"} de R$ ${valor.toFixed(2)} em ${categoria}` });
+
+      await supabase.from("ai_commands_history").insert({
+        user_id: user.id,
+        command: descricao,
+        action_type: `voice_${tipo}`,
+        response: `Registrado R$ ${valor.toFixed(2)} em ${categoria}`,
+      });
+    }
+
+    setTimeout(() => setStatus(""), 4000);
+  }, [user]);
+
+  const handleValueResponse = useCallback((transcript: string) => {
+    const pending = pendingRef.current;
+    if (!pending) return;
+
+    setStatus(`"${transcript}"`);
+    const valor = parseValue(transcript);
+
+    if (!valor) {
+      const msg = "Não entendi o valor. Pode repetir?";
+      speak(msg);
+      setStatus(`❓ ${msg}`);
+      pendingRef.current = null;
+      setTimeout(() => setStatus(""), 3000);
+      return;
+    }
+
+    pendingRef.current = null;
+    saveRecord(pending.tipo, valor, pending.categoria, pending.descricao);
+  }, [saveRecord]);
+
+  const handleTranscript = useCallback((transcript: string) => {
+    const lower = transcript.toLowerCase().trim();
+    setStatus(`"${transcript}"`);
+
+    // Navigation
+    if (lower.includes("abrir dashboard") || lower.includes("ir para dashboard")) {
+      navigate("/");
+      speak("Abrindo Dashboard");
+      toast({ title: "🎙️ Navegando", description: "Abrindo Dashboard" });
+      setTimeout(() => setStatus(""), 2000);
+      return;
+    }
+    if (lower.includes("abrir registros") || lower.includes("ir para registros")) {
+      navigate("/registros");
+      speak("Abrindo Registros");
+      toast({ title: "🎙️ Navegando", description: "Abrindo Registros" });
+      setTimeout(() => setStatus(""), 2000);
+      return;
+    }
+    if (lower.includes("abrir contas") || lower.includes("ir para contas")) {
+      navigate("/contas");
+      speak("Abrindo Contas");
+      toast({ title: "🎙️ Navegando", description: "Abrindo Contas" });
+      setTimeout(() => setStatus(""), 2000);
+      return;
+    }
+    if (lower.includes("abrir relatório") || lower.includes("ir para relatório")) {
+      navigate("/relatorios");
+      speak("Abrindo Relatórios");
+      toast({ title: "🎙️ Navegando", description: "Abrindo Relatórios" });
+      setTimeout(() => setStatus(""), 2000);
+      return;
+    }
+
+    // Record commands
+    const isExpense = lower.includes("gasto") || lower.includes("saída") || lower.includes("despesa");
+    const isIncome = lower.includes("entrada") || lower.includes("receita") || lower.includes("salário") || lower.includes("renda");
+
+    if (isExpense || isIncome) {
+      const tipo = isIncome ? "entrada" : "saida";
+      const categoria = inferCategory(lower);
+      const valor = parseValue(transcript);
+
+      // If value already in the phrase, save directly
+      if (valor) {
+        saveRecord(tipo as "entrada" | "saida", valor, categoria, transcript);
         return;
       }
-      if (lower.includes("abrir registros") || lower.includes("ir para registros")) {
-        navigate("/registros");
-        toast({ title: "🎙️ Navegando", description: "Abrindo Registros" });
-        return;
-      }
-      if (lower.includes("abrir contas") || lower.includes("ir para contas")) {
-        navigate("/contas");
-        toast({ title: "🎙️ Navegando", description: "Abrindo Contas" });
-        return;
-      }
 
-      // Add record commands
-      const isExpense = lower.includes("gasto") || lower.includes("saída") || lower.includes("despesa");
-      const isIncome = lower.includes("entrada") || lower.includes("receita") || lower.includes("salário") || lower.includes("renda");
+      // Otherwise, ask for value (conversational flow)
+      pendingRef.current = { tipo: tipo as "entrada" | "saida", descricao: transcript, categoria };
+      const msg = "Qual valor deseja adicionar?";
+      speak(msg);
+      setStatus(`🎙️ ${msg}`);
+      listenForValue();
+      return;
+    }
 
-      if (isExpense || isIncome) {
-        const valor = parseValue(transcript);
-        if (!valor || !user) {
-          toast({ title: "🎙️ Não entendi o valor", description: "Tente novamente com o valor.", variant: "destructive" });
-          return;
-        }
-
-        const tipo = isIncome ? "entrada" : "saida";
-        const categoria = inferCategory(lower);
-        const descricao = transcript;
-        const data = new Date().toISOString().slice(0, 10);
-
-        const { error } = await supabase.from("financial_records").insert({
-          user_id: user.id,
-          tipo,
-          valor,
-          categoria,
-          descricao,
-          data,
-        });
-
-        if (error) {
-          toast({ title: "Erro ao registrar", description: error.message, variant: "destructive" });
-        } else {
-          toast({
-            title: "🎙️ Registro adicionado!",
-            description: `${tipo === "entrada" ? "Entrada" : "Saída"} de R$ ${valor.toFixed(2)} em ${categoria}`,
-          });
-          // Log command
-          await supabase.from("ai_commands_history").insert({
-            user_id: user.id,
-            command: transcript,
-            action_type: `voice_${tipo}`,
-            response: `Registrado R$ ${valor.toFixed(2)} em ${categoria}`,
-          });
-        }
-        return;
-      }
-
-      toast({ title: "🎙️ Comando não reconhecido", description: `"${transcript}"`, variant: "destructive" });
-    },
-    [user, navigate]
-  );
+    // Unknown
+    const msg = "Não entendi o comando. Tente dizer: adicionar gasto de gasolina 50 reais.";
+    speak(msg);
+    setStatus(`❓ "${transcript}"`);
+    toast({ title: "🎙️ Comando não reconhecido", description: `"${transcript}"`, variant: "destructive" });
+    setTimeout(() => setStatus(""), 4000);
+  }, [navigate, saveRecord, listenForValue]);
 
   const toggleListening = useCallback(() => {
     if (!SpeechRecognition) {
@@ -155,38 +284,12 @@ export function VoiceAssistant() {
       recognitionRef.current.stop();
       setListening(false);
       setStatus("");
+      pendingRef.current = null;
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.lang = "pt-BR";
-    recognition.continuous = false;
-    recognition.interimResults = false;
-    recognitionRef.current = recognition;
-
-    recognition.onstart = () => {
-      setListening(true);
-      setStatus("Ouvindo...");
-    };
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      processCommand(transcript);
-    };
-
-    recognition.onerror = () => {
-      setListening(false);
-      setStatus("");
-      toast({ title: "Erro no microfone", description: "Tente novamente.", variant: "destructive" });
-    };
-
-    recognition.onend = () => {
-      setListening(false);
-      setTimeout(() => setStatus(""), 3000);
-    };
-
-    recognition.start();
-  }, [listening, SpeechRecognition, processCommand]);
+    startListening();
+  }, [listening, SpeechRecognition, startListening]);
 
   if (!SpeechRecognition) return null;
 
