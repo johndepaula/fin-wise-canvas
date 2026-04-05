@@ -14,7 +14,9 @@ import Perfil from "./pages/Perfil";
 import Relatorios from "./pages/Relatorios";
 import Auth from "./pages/Auth";
 import Indicacoes from "./pages/Indicacoes";
+import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
+import { VoiceAssistant } from "./components/VoiceAssistant";
 
 const queryClient = new QueryClient();
 
