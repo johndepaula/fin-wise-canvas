@@ -92,6 +92,27 @@ export type Database = {
         }
         Relationships: []
       }
+      feedbacks: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       financial_goals: {
         Row: {
           created_at: string
@@ -162,6 +183,7 @@ export type Database = {
           display_name: string | null
           id: string
           logo_url: string | null
+          referral_code: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -169,6 +191,7 @@ export type Database = {
           display_name?: string | null
           id: string
           logo_url?: string | null
+          referral_code?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -176,6 +199,7 @@ export type Database = {
           display_name?: string | null
           id?: string
           logo_url?: string | null
+          referral_code?: string | null
         }
         Relationships: []
       }
