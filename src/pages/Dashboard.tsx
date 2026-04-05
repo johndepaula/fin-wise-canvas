@@ -298,7 +298,7 @@ export default function Dashboard() {
                     animationDuration={800}
                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                     labelLine={true}
-                    labelStyle={{ fontSize: "12px", fill: "hsl(215 12% 70%)" }}
+                    
                   >
                     {distribuicaoFinanceira.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
