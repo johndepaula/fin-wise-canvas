@@ -15,7 +15,6 @@ import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 import { formatCurrencyBRL } from "@/lib/currency";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 
 type Periodo = string;
 
