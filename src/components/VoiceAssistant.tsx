@@ -11,6 +11,9 @@ const CATEGORY_MAP: Record<string, string> = {
   combustível: "transporte",
   uber: "transporte",
   ônibus: "transporte",
+  passagem: "transporte",
+  estacionamento: "transporte",
+  pedágio: "transporte",
   mercado: "alimentação",
   supermercado: "alimentação",
   restaurante: "alimentação",
@@ -18,19 +21,42 @@ const CATEGORY_MAP: Record<string, string> = {
   jantar: "alimentação",
   café: "alimentação",
   lanche: "alimentação",
+  comida: "alimentação",
+  padaria: "alimentação",
   farmácia: "saúde",
   remédio: "saúde",
   médico: "saúde",
   academia: "saúde",
+  hospital: "saúde",
+  consulta: "saúde",
   aluguel: "moradia",
   condomínio: "moradia",
   luz: "moradia",
+  energia: "moradia",
   água: "moradia",
   internet: "moradia",
+  gás: "moradia",
   salário: "salário",
   freelance: "renda extra",
   pix: "transferência",
+  roupa: "vestuário",
+  sapato: "vestuário",
+  escola: "educação",
+  curso: "educação",
+  faculdade: "educação",
+  presente: "presente",
 };
+
+const NAV_ROUTES: Array<{ keywords: string[]; path: string; label: string }> = [
+  { keywords: ["dashboard", "início", "inicio", "home", "painel"], path: "/", label: "Dashboard" },
+  { keywords: ["registro", "registros", "meus registros", "lançamento"], path: "/registros", label: "Registros" },
+  { keywords: ["conta", "contas", "boleto", "boletos"], path: "/contas", label: "Contas" },
+  { keywords: ["relatório", "relatórios", "relatorio", "relatorios"], path: "/relatorios", label: "Relatórios" },
+  { keywords: ["configuração", "configurações", "ajuste", "ajustes", "config"], path: "/configuracoes", label: "Configurações" },
+  { keywords: ["perfil", "meu perfil"], path: "/perfil", label: "Perfil" },
+  { keywords: ["feedback", "sugestão", "sugestões"], path: "/feedback", label: "Feedback" },
+  { keywords: ["indicação", "indicações", "indicar", "convite"], path: "/indicacoes", label: "Indicações" },
+];
 
 function inferCategory(text: string): string {
   const lower = text.toLowerCase();
@@ -38,6 +64,17 @@ function inferCategory(text: string): string {
     if (lower.includes(keyword)) return cat;
   }
   return "outros";
+}
+
+function inferDescription(text: string): string {
+  const lower = text.toLowerCase();
+  for (const keyword of Object.keys(CATEGORY_MAP)) {
+    if (lower.includes(keyword)) return keyword;
+  }
+  const cleaned = lower
+    .replace(/adicionar|gasto|despesa|saída|saida|entrada|receita|renda|de|do|da|um|uma/g, "")
+    .trim();
+  return cleaned || "registro por voz";
 }
 
 function parseValue(text: string): number | null {
@@ -67,6 +104,20 @@ function speak(text: string) {
     utterance.rate = 1.1;
     window.speechSynthesis.speak(utterance);
   }
+}
+
+function matchesNav(text: string): { path: string; label: string } | null {
+  const lower = text.toLowerCase();
+  const navPrefixes = ["abrir", "ir para", "ir pra", "mostrar", "ver", "acessar", "navegar"];
+  const hasNavIntent = navPrefixes.some((p) => lower.includes(p));
+  if (!hasNavIntent) return null;
+
+  for (const route of NAV_ROUTES) {
+    if (route.keywords.some((kw) => lower.includes(kw))) {
+      return { path: route.path, label: route.label };
+    }
+  }
+  return null;
 }
 
 interface PendingCommand {
@@ -121,7 +172,6 @@ export function VoiceAssistant() {
 
   const listenForValue = useCallback(() => {
     if (!SpeechRecognition) return;
-    // Small delay so TTS finishes before listening
     setTimeout(() => {
       const recognition = new SpeechRecognition();
       recognition.lang = "pt-BR";
@@ -155,7 +205,8 @@ export function VoiceAssistant() {
 
   const saveRecord = useCallback(async (tipo: string, valor: number, categoria: string, descricao: string) => {
     if (!user) return;
-    const data = new Date().toISOString().slice(0, 10);
+    const now = new Date();
+    const data = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
     const { error } = await supabase.from("financial_records").insert({
       user_id: user.id,
@@ -163,7 +214,7 @@ export function VoiceAssistant() {
       valor,
       categoria,
       descricao,
-      data,
+      data: data + "T12:00:00",
     });
 
     if (error) {
@@ -172,10 +223,11 @@ export function VoiceAssistant() {
       setStatus(`❌ ${msg}`);
       toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else {
-      const msg = `Registro adicionado! ${tipo === "entrada" ? "Entrada" : "Saída"} de ${valor.toFixed(2)} reais em ${categoria}.`;
+      const tipoLabel = tipo === "entrada" ? "Entrada" : "Saída";
+      const msg = `Registro adicionado! ${tipoLabel} de ${valor.toFixed(2)} reais em ${categoria}.`;
       speak(msg);
       setStatus(`✅ R$ ${valor.toFixed(2)} → ${categoria}`);
-      toast({ title: "🎙️ Registro adicionado!", description: `${tipo === "entrada" ? "Entrada" : "Saída"} de R$ ${valor.toFixed(2)} em ${categoria}` });
+      toast({ title: "🎙️ Registro adicionado!", description: `${tipoLabel} de R$ ${valor.toFixed(2)} em ${categoria}` });
 
       await supabase.from("ai_commands_history").insert({
         user_id: user.id,
@@ -213,52 +265,34 @@ export function VoiceAssistant() {
     setStatus(`"${transcript}"`);
 
     // Navigation
-    if (lower.includes("abrir dashboard") || lower.includes("ir para dashboard")) {
-      navigate("/");
-      speak("Abrindo Dashboard");
-      toast({ title: "🎙️ Navegando", description: "Abrindo Dashboard" });
-      setTimeout(() => setStatus(""), 2000);
-      return;
-    }
-    if (lower.includes("abrir registros") || lower.includes("ir para registros")) {
-      navigate("/registros");
-      speak("Abrindo Registros");
-      toast({ title: "🎙️ Navegando", description: "Abrindo Registros" });
-      setTimeout(() => setStatus(""), 2000);
-      return;
-    }
-    if (lower.includes("abrir contas") || lower.includes("ir para contas")) {
-      navigate("/contas");
-      speak("Abrindo Contas");
-      toast({ title: "🎙️ Navegando", description: "Abrindo Contas" });
-      setTimeout(() => setStatus(""), 2000);
-      return;
-    }
-    if (lower.includes("abrir relatório") || lower.includes("ir para relatório")) {
-      navigate("/relatorios");
-      speak("Abrindo Relatórios");
-      toast({ title: "🎙️ Navegando", description: "Abrindo Relatórios" });
+    const nav = matchesNav(lower);
+    if (nav) {
+      navigate(nav.path);
+      speak(`Abrindo ${nav.label}`);
+      toast({ title: "🎙️ Navegando", description: `Abrindo ${nav.label}` });
       setTimeout(() => setStatus(""), 2000);
       return;
     }
 
-    // Record commands
-    const isExpense = lower.includes("gasto") || lower.includes("saída") || lower.includes("despesa");
-    const isIncome = lower.includes("entrada") || lower.includes("receita") || lower.includes("salário") || lower.includes("renda");
+    // Record commands - flexible keyword matching
+    const expenseKeywords = ["gasto", "saída", "saida", "despesa", "paguei", "pagar", "comprei", "compra", "gastei"];
+    const incomeKeywords = ["entrada", "receita", "salário", "renda", "recebi", "ganhei", "ganho"];
+
+    const isExpense = expenseKeywords.some((kw) => lower.includes(kw));
+    const isIncome = incomeKeywords.some((kw) => lower.includes(kw));
 
     if (isExpense || isIncome) {
       const tipo = isIncome ? "entrada" : "saida";
       const categoria = inferCategory(lower);
+      const descricao = inferDescription(lower);
       const valor = parseValue(transcript);
 
-      // If value already in the phrase, save directly
       if (valor) {
-        saveRecord(tipo as "entrada" | "saida", valor, categoria, transcript);
+        saveRecord(tipo, valor, categoria, descricao);
         return;
       }
 
-      // Otherwise, ask for value (conversational flow)
-      pendingRef.current = { tipo: tipo as "entrada" | "saida", descricao: transcript, categoria };
+      pendingRef.current = { tipo: tipo as "entrada" | "saida", descricao, categoria };
       const msg = "Qual valor deseja adicionar?";
       speak(msg);
       setStatus(`🎙️ ${msg}`);
@@ -266,8 +300,8 @@ export function VoiceAssistant() {
       return;
     }
 
-    // Unknown
-    const msg = "Não entendi o comando. Tente dizer: adicionar gasto de gasolina 50 reais.";
+    // Fallback with helpful guidance
+    const msg = "Não entendi. Tente dizer: adicionar gasto de gasolina 50 reais, ou abrir dashboard.";
     speak(msg);
     setStatus(`❓ "${transcript}"`);
     toast({ title: "🎙️ Comando não reconhecido", description: `"${transcript}"`, variant: "destructive" });

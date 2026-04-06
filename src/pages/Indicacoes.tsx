@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Copy, Gift, Link2, Users } from "lucide-react";
+import { Gift, Link2, Users } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,12 +37,6 @@ export default function Indicacoes() {
     ? `${window.location.origin}/auth?ref=${referralCode}`
     : "";
 
-  const copyCode = () => {
-    if (!referralCode) return;
-    navigator.clipboard.writeText(referralCode);
-    toast({ title: "Código copiado!", description: "Compartilhe com seus amigos." });
-  };
-
   const copyLink = () => {
     if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
@@ -61,21 +55,10 @@ export default function Indicacoes() {
           </div>
 
           <div>
-            <h2 className="text-lg font-medium mb-2">Seu código de indicação</h2>
+            <h2 className="text-lg font-medium mb-2">Seu link de indicação</h2>
             <p className="text-sm text-muted-foreground mb-4">
-              Use o código ou o link para convidar novos usuários.
+              Copie e envie para convidar novos usuários.
             </p>
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Input
-              value={referralCode || "Carregando..."}
-              readOnly
-              className="text-center font-mono text-lg font-medium bg-muted/50"
-            />
-            <Button onClick={copyCode} size="icon" disabled={!referralCode} variant="outline">
-              <Copy className="h-4 w-4" />
-            </Button>
           </div>
 
           <div className="flex items-center space-x-2">
