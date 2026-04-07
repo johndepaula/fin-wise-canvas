@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,30 +14,56 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const initialSessionLoaded = useRef(false);
 
   useEffect(() => {
-    // Set up listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      // Only set loading=false from listener if getSession already resolved
-      if (initialSessionLoaded.current) {
-        setLoading(false);
+    let mounted = true;
+
+    async function initializeAuth() {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (mounted) {
+          setSession(session);
+        }
+      } catch (error) {
+        console.error("Erro ao recuperar sessão:", error);
+        if (mounted) setSession(null);
+      } finally {
+        if (mounted) {
+          setLoading(false);
+        }
       }
-    });
+    }
 
-    // Then restore session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      initialSessionLoaded.current = true;
-      setSession(session);
-      setLoading(false);
-    });
+    // 1. Inicia buscando a sessão local (localStorage do supabase)
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    // 2. Escuta mudanças globais na autenticação
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, newSession) => {
+        if (mounted) {
+          setSession(newSession);
+          // Permite desbloquear o loading caso o listener seja mais rápido que getSession
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    try {
+      setLoading(true);
+      await supabase.auth.signOut();
+    } finally {
+      setSession(null);
+      setLoading(false);
+    }
   };
 
   return (
