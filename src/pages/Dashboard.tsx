@@ -15,7 +15,6 @@ import { DashboardInfoBar } from "@/components/DashboardInfoBar";
 import { formatCurrencyBRL } from "@/lib/currency";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 
 type Periodo = string;
 
@@ -299,7 +298,7 @@ export default function Dashboard() {
                     animationDuration={800}
                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                     labelLine={true}
-                    labelStyle={{ fontSize: "12px", fill: "hsl(215 12% 70%)" }}
+                    
                   >
                     {distribuicaoFinanceira.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
