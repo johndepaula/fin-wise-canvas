@@ -37,6 +37,7 @@ export default function Registros() {
   const [tipoFiltro, setTipoFiltro] = useState("todos");
   const [catFiltro, setCatFiltro] = useState("todas");
   const [busca, setBusca] = useState("");
+  const [buscaDebounced, setBuscaDebounced] = useState("");
   const [sort, setSort] = useState<{ field: SortField; dir: SortDir }>({ field: "data", dir: "desc" });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,18 +47,25 @@ export default function Registros() {
 
   const allCategorias = useMemo(() => [...TODAS_CATEGORIAS, ...customCats.filter((c) => !TODAS_CATEGORIAS.includes(c))], [customCats]);
 
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setBuscaDebounced(busca);
+    }, 400);
+    return () => clearTimeout(handler);
+  }, [busca]);
+
   const filtrados = useMemo(() => {
     let list = [...registros];
     if (tipoFiltro !== "todos") list = list.filter((r) => r.tipo === tipoFiltro);
     if (catFiltro !== "todas") list = list.filter((r) => r.categoria === catFiltro);
-    if (busca) list = list.filter((r) => r.descricao.toLowerCase().includes(busca.toLowerCase()));
+    if (buscaDebounced) list = list.filter((r) => r.descricao.toLowerCase().includes(buscaDebounced.toLowerCase()));
     list.sort((a, b) => {
       const mul = sort.dir === "asc" ? 1 : -1;
       if (sort.field === "data") return mul * (new Date(a.data).getTime() - new Date(b.data).getTime());
       return mul * (a.valor - b.valor);
     });
     return list;
-  }, [registros, tipoFiltro, catFiltro, busca, sort]);
+  }, [registros, tipoFiltro, catFiltro, buscaDebounced, sort]);
 
   const toggleSort = (field: SortField) => {
     setSort((prev) => ({ field, dir: prev.field === field && prev.dir === "desc" ? "asc" : "desc" }));
