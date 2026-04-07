@@ -30,11 +30,20 @@ export default function Auth() {
     setLoading(true);
 
     if (isLogin) {
+      console.log("[Auth Page] ⏳ Iniciando verificação de credenciais...");
       const { error } = await supabase.auth.signInWithPassword({ email, password });
+      
       if (error) {
+        console.error("[Auth Page] 🔴 Descrição do erro:", error.message);
         toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
+        setLoading(false); // Retira o loading APENAS se houver erro, pra permitir nova tentativa
+      } else {
+        console.log("[Auth Page] 🟢 Sucesso no login. Aguardando a propagação do AuthContext para redirecionar...");
+        // NÃO dá setLoading(false) aqui. 
+        // O botão continua travado enquanto o Router processa a troca de tela!
       }
     } else {
+      console.log("[Auth Page] ⏳ Criando novo usuário...");
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -46,12 +55,15 @@ export default function Auth() {
         },
       });
       if (error) {
+        console.error("[Auth Page] 🔴 Erro ao criar conta:", error.message);
         toast({ title: "Erro ao criar conta", description: error.message, variant: "destructive" });
+        setLoading(false);
       } else {
+        console.log("[Auth Page] 🟢 Conta criada com sucesso (aguardando verificação).");
         setShowVerification(true);
+        setLoading(false);
       }
     }
-    setLoading(false);
   };
 
   if (showVerification) {

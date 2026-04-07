@@ -37,33 +37,43 @@ function getWelcomeMessage() {
 }
 
 function ProtectedRoutes() {
-  const { session, loading } = useAuth();
+  const { session, isLoadingAuth, isAuthenticated } = useAuth();
   const [showWelcome, setShowWelcome] = useState(false);
   const prevSessionRef = useRef<string | null>(null);
 
   useEffect(() => {
+    if (isLoadingAuth) return;
+
     const currentSessionId = session?.user?.id || null;
     const prevSessionId = prevSessionRef.current;
 
-    if (session && !loading && currentSessionId !== prevSessionId) {
+    if (isAuthenticated && currentSessionId !== prevSessionId) {
       prevSessionRef.current = currentSessionId;
       setShowWelcome(true);
       setTimeout(() => setShowWelcome(false), 2000);
-    } else if (!session) {
+    } else if (!isAuthenticated) {
       prevSessionRef.current = null;
     }
-  }, [session, loading]);
+  }, [session, isLoadingAuth, isAuthenticated]);
 
-  if (loading) {
+  if (isLoadingAuth) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="h-8 w-8 rounded-lg bg-primary animate-pulse" />
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 rounded-lg bg-primary animate-pulse" />
+          <p className="text-muted-foreground text-sm font-medium animate-pulse">Carregando Sessão...</p>
+        </div>
       </div>
     );
   }
 
-  if (!session) return <Navigate to="/auth" replace />;
+  // 🔹 Se usuário NÃO existe → redirecionar para login
+  if (!isAuthenticated) {
+    console.log("[Router] 🛡️ ProtectedRoutes: Usuário não autenticado. Redirecionando p/ /auth");
+    return <Navigate to="/auth" replace />;
+  }
 
+  // 🔹 Se usuário existe → permitir acesso
   if (showWelcome) {
     return (
       <div className="animate-welcome-container min-h-screen flex flex-col items-center justify-center bg-background">
@@ -100,6 +110,7 @@ function ProtectedRoutes() {
     </RegistrosProvider>
   );
 }
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -117,9 +128,22 @@ const App = () => (
 );
 
 function AuthPageWrapper() {
-  const { session, loading } = useAuth();
-  if (loading) return null;
-  if (session) return <Navigate to="/" replace />;
+  const { isAuthenticated, isLoadingAuth } = useAuth();
+  
+  // 🔹 Enquanto isLoadingAuth = true → NÃO renderizar rotas, NÃO redirecionar
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 rounded-lg bg-primary/50 animate-pulse" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated) {
+    console.log("[Router] 🔐 AuthPageWrapper: Permissão Concedida. Já logado. Redirecionando p/ Dash.");
+    return <Navigate to="/" replace />;
+  }
+
   return <Auth />;
 }
 
