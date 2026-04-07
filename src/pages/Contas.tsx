@@ -22,12 +22,7 @@ interface FormData {
   amount_paid: string;
 }
 
-function getLocalDate() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-const emptyForm: FormData = { account_type: "", due_date: getLocalDate(), amount: "", amount_paid: "0" };
+const emptyForm: FormData = { account_type: "", due_date: new Date().toISOString().slice(0, 10), amount: "", amount_paid: "0" };
 
 function getDueStatus(due_date: string) {
   const now = new Date();

@@ -128,7 +128,7 @@ export function CalculatorModal({ collapsed }: { collapsed?: boolean }) {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <div className="flex items-center w-full cursor-pointer group mx-[11px]">
+        <div className="flex items-center w-full cursor-pointer group">
           <CalcIcon className="mr-2.5 h-4 w-4 shrink-0 transition-transform group-hover:scale-110" />
           {!collapsed && <span>Calculadora</span>}
         </div>

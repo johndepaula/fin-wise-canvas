@@ -1,4 +1,4 @@
-import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator, BarChart3, Users, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Receipt, User, LogOut, Wallet, Settings, Calculator, BarChart3, Users } from "lucide-react";
 import { CalculatorModal } from "@/components/Calculator";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/contexts/AuthContext";
@@ -18,9 +18,9 @@ import {
 import { Separator } from "@/components/ui/separator";
 
 const mainItems = [
-  { title: "Painel", url: "/", icon: LayoutDashboard },
-  { title: "Meus Registros", url: "/registros", icon: Receipt },
-  { title: "Contas", url: "/contas", icon: Wallet },
+{ title: "Dashboard", url: "/", icon: LayoutDashboard },
+{ title: "Meus Registros", url: "/registros", icon: Receipt },
+{ title: "Contas", url: "/contas", icon: Wallet },
 ];
 
 
@@ -127,19 +127,6 @@ export function AppSidebar() {
                 
                 <Users className="mr-2.5 h-4 w-4" />
                 {!collapsed && <span>Indique um amigo</span>}
-              </NavLink>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton asChild>
-              <NavLink
-                to="/feedback"
-                className="hover:bg-accent/60 transition-colors duration-150"
-                activeClassName="bg-accent text-foreground font-medium"
-                onClick={closeMobile}>
-                
-                <MessageSquare className="mr-2.5 h-4 w-4" />
-                {!collapsed && <span>Feedback</span>}
               </NavLink>
             </SidebarMenuButton>
           </SidebarMenuItem>

@@ -28,12 +28,7 @@ interface FormData {
   data: string;
 }
 
-function getLocalDate() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-}
-
-const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", categoriaCustom: "", descricao: "", data: getLocalDate() };
+const emptyForm: FormData = { tipo: "saida", valor: "", categoria: "", categoriaCustom: "", descricao: "", data: new Date().toISOString().slice(0, 10) };
 
 export default function Registros() {
   const { registros, adicionar, editar, remover } = useRegistrosContext();
