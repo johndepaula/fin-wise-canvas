@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -16,55 +16,22 @@ export function useBills() {
   const { user } = useAuth();
   const [bills, setBills] = useState<Bill[]>([]);
   const [loading, setLoading] = useState(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetch = useCallback(async () => {
     if (!user) { setBills([]); setLoading(false); return; }
-
-    // Cancela requisição anterior antes de iniciar nova
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    const { data, error } = await supabase.from("bills").select("*").order("due_date", { ascending: true });
+    if (error) {
+      toast({ title: "Erro ao carregar contas", description: error.message, variant: "destructive" });
+    } else {
+      setBills((data || []).map((b) => ({
+        id: b.id, account_type: b.account_type, due_date: b.due_date,
+        amount: Number(b.amount), amount_paid: Number(b.amount_paid), created_at: b.created_at,
+      })));
     }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    try {
-      const { data, error } = await supabase
-        .from("bills")
-        .select("*")
-        .order("due_date", { ascending: true })
-        .abortSignal(abortController.signal);
-
-      if (error) {
-        if (error.message?.includes("AbortError") || error.name === "AbortError") {
-          return; // Ignorar silenciosamente
-        }
-        toast({ title: "Erro ao carregar contas", description: error.message, variant: "destructive" });
-      } else {
-        setBills((data || []).map((b) => ({
-          id: b.id, account_type: b.account_type, due_date: b.due_date,
-          amount: Number(b.amount), amount_paid: Number(b.amount_paid), created_at: b.created_at,
-        })));
-      }
-    } catch (error: any) {
-      if (error.name === "AbortError" || error.message?.includes("AbortError")) return;
-      console.error(error);
-    } finally {
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-      }
-    }
+    setLoading(false);
   }, [user]);
 
-  useEffect(() => { 
-    fetch(); 
-    return () => {
-      // Cancela requisições pendentes na troca de página
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetch]);
+  useEffect(() => { fetch(); }, [fetch]);
 
   const add = useCallback(async (bill: Omit<Bill, "id" | "created_at">) => {
     if (!user) return;
