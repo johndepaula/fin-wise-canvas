@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -8,62 +8,33 @@ export function useRegistros() {
   const { user } = useAuth();
   const [registros, setRegistros] = useState<Registro[]>([]);
   const [loading, setLoading] = useState(true);
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   const fetchRegistros = useCallback(async () => {
     if (!user) { setRegistros([]); setLoading(false); return; }
+    const { data, error } = await supabase
+      .from("financial_records")
+      .select("*")
+      .order("data", { ascending: false });
 
-    // Cancela requisição anterior antes de iniciar nova
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
+    if (error) {
+      toast({ title: "Erro ao carregar registros", description: error.message, variant: "destructive" });
+    } else {
+      setRegistros(
+        (data || []).map((r) => ({
+          id: r.id,
+          tipo: r.tipo as Registro["tipo"],
+          valor: Number(r.valor),
+          categoria: r.categoria,
+          descricao: r.descricao,
+          data: typeof r.data === "string" ? r.data.slice(0, 10) : r.data,
+          criado_em: r.criado_em,
+        }))
+      );
     }
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    try {
-      const { data, error } = await supabase
-        .from("financial_records")
-        .select("*")
-        .order("data", { ascending: false })
-        .abortSignal(abortController.signal);
-
-      if (error) {
-        if (error.message?.includes("AbortError") || error.name === "AbortError") {
-          return; // Ignorar silenciosamente e não quebrar a UI
-        }
-        toast({ title: "Erro ao carregar registros", description: error.message, variant: "destructive" });
-      } else {
-        setRegistros(
-          (data || []).map((r) => ({
-            id: r.id,
-            tipo: r.tipo as Registro["tipo"],
-            valor: Number(r.valor),
-            categoria: r.categoria,
-            descricao: r.descricao,
-            data: typeof r.data === "string" ? r.data.slice(0, 10) : r.data,
-            criado_em: r.criado_em,
-          }))
-        );
-      }
-    } catch (error: any) {
-      if (error.name === "AbortError" || error.message?.includes("AbortError")) return;
-      console.error(error);
-    } finally {
-      if (abortControllerRef.current === abortController) {
-        setLoading(false);
-      }
-    }
+    setLoading(false);
   }, [user]);
 
-  useEffect(() => { 
-    fetchRegistros(); 
-    return () => {
-      // Ao trocar de página: cancelar requisições pendentes
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, [fetchRegistros]);
+  useEffect(() => { fetchRegistros(); }, [fetchRegistros]);
 
   const adicionar = useCallback(async (reg: Omit<Registro, "id" | "criado_em">) => {
     if (!user) return;

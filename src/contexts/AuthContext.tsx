@@ -5,9 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface AuthContextType {
   session: Session | null;
   user: User | null;
-  isAuthenticated: boolean;
-  isLoadingAuth: boolean;
-  loading: boolean; // Para manter compatibilidade onde `loading` já era usado
+  loading: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -15,80 +13,35 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const initialSessionLoaded = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
-    console.log("[Auth Flow] 🟢 1. Inicializando AuthProvider (Mount)...");
-
-    async function checkSession() {
-      try {
-        console.log("[Auth Flow] 🔍 2. Buscando sessão do banco/storage...");
-        const { data: { session: localSession }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error("[Auth Flow] 🔴 Erro ao buscar sessão:", error);
-          throw error;
-        }
-
-        if (mounted) {
-          console.log(`[Auth Flow] 📋 3. Sessão encontrada? ${!!localSession}`);
-          setSession(localSession);
-        }
-      } catch (error) {
-        if (mounted) setSession(null);
-      } finally {
-        if (mounted) {
-          console.log("[Auth Flow] 🔓 4. Finalizado carregamento inicial. isLoadingAuth = false");
-          setIsLoadingAuth(false);
-        }
+    // Set up listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      // Only set loading=false from listener if getSession already resolved
+      if (initialSessionLoaded.current) {
+        setLoading(false);
       }
-    }
+    });
 
-    checkSession();
+    // Then restore session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      initialSessionLoaded.current = true;
+      setSession(session);
+      setLoading(false);
+    });
 
-    console.log("[Auth Flow] 🎧 Registrando ouvinte global onAuthStateChange...");
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log(`[Auth Flow] ⚡ Evento recebido: ${event}. Sessão presente: ${!!newSession}`);
-        if (mounted) {
-          setSession(newSession);
-          // Permite desbloquear o loading pois a sessão já é conhecida no callback
-          setIsLoadingAuth(false);
-        }
-      }
-    );
-
-    return () => {
-      console.log("[Auth Flow] 🧹 Limpando listener e useEffect...");
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
-    try {
-      console.log("[Auth Flow] 🚪 Iniciando processo de signOut...");
-      setIsLoadingAuth(true);
-      await supabase.auth.signOut();
-    } finally {
-      console.log("[Auth Flow] 🚪 signOut concluído com sucesso.");
-      setSession(null);
-      setIsLoadingAuth(false);
-    }
+    await supabase.auth.signOut();
   };
 
-  const isAuthenticated = !!session?.user;
-
   return (
-    <AuthContext.Provider value={{ 
-      session, 
-      user: session?.user ?? null, 
-      isAuthenticated,
-      isLoadingAuth,
-      loading: isLoadingAuth, // Mantido apenas para não quebrar App.tsx caso use
-      signOut 
-    }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
