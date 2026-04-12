@@ -8,7 +8,6 @@ import { TODAS_CATEGORIAS } from "@/data/mockData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useBills } from "@/hooks/useBills";
 import { TrendingUp, TrendingDown, CalendarDays, Tag, Lightbulb, Wallet } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { DashboardInfoBar } from "@/components/DashboardInfoBar";
@@ -31,7 +30,6 @@ const PIE_COLORS_CATEGORIES = [
 export default function Dashboard() {
   const { registros, loading } = useRegistrosContext();
   const { settings } = useUserSettings();
-  const { bills } = useBills();
   const { profile } = useProfile();
   const { user } = useAuth();
   const email = user?.email ?? "";
@@ -136,12 +134,7 @@ export default function Dashboard() {
 
   const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
-  const totalAPagar = bills.reduce((s, b) => s + (b.amount || 0), 0);
-  const totalPago = bills.reduce((s, b) => s + (b.amount_paid || 0), 0);
-  
-  const restanteContas = totalAPagar - totalPago;
-  const saldoBase = totalGeralEntradas - totalGeralSaidas;
-  let saldoEmConta = saldoBase - restanteContas;
+  const saldoEmConta = totalGeralEntradas - totalGeralSaidas;
   
   if (Number.isNaN(saldoEmConta) || !Number.isFinite(saldoEmConta)) {
     saldoEmConta = 0;
