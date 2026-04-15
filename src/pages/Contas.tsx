@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useBills, Bill } from "@/hooks/useBills";
+import { useRegistros } from "@/hooks/useRegistros";
 import { useInputHistory } from "@/hooks/useInputHistory";
 import { SuggestionDropdown } from "@/components/SuggestionDropdown";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +43,7 @@ function getDueStatus(due_date: string) {
 
 export default function Contas() {
   const { bills, loading, add, update, remove } = useBills();
+  const { adicionar: addRegistro } = useRegistros();
   const accountHistory = useInputHistory("tipo_conta");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -174,6 +176,13 @@ export default function Contas() {
   const handleMarkAsPaid = async (b: Bill) => {
     if (b.amount - b.amount_paid <= 0) return;
     await update(b.id, { amount_paid: b.amount });
+    await addRegistro({
+      tipo: "saída",
+      valor: b.amount,
+      categoria: b.account_type,
+      descricao: `Pagamento: ${b.account_type}`,
+      data: getLocalDate(),
+    });
   };
 
   const fmt = formatCurrencyBRL;
