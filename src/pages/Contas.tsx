@@ -357,7 +357,7 @@ export default function Contas() {
                             >
                               {remaining <= 0 ? "Pago ✔" : "Pago"}
                             </Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(b)} disabled={remaining <= 0}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(b)}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(b.id)}>
