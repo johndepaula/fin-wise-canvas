@@ -171,6 +171,11 @@ export default function Contas() {
     setModalOpen(false);
   };
 
+  const handleMarkAsPaid = async (b: Bill) => {
+    if (b.amount - b.amount_paid <= 0) return;
+    await update(b.id, { amount_paid: b.amount });
+  };
+
   const fmt = formatCurrencyBRL;
 
   if (loading) {
@@ -333,8 +338,17 @@ export default function Contas() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(b)}>
+                          <div className="flex justify-end gap-1 items-center">
+                            <Button
+                              variant={remaining <= 0 ? "outline" : "default"}
+                              size="sm"
+                              className={`h-8 font-medium px-3 text-xs mr-1 transition-all ${remaining <= 0 ? "border-income/50 text-income bg-income/5 hover:bg-income/5 cursor-not-allowed opacity-100" : "shadow-sm"}`}
+                              onClick={() => { if (remaining > 0) handleMarkAsPaid(b); }}
+                              disabled={remaining <= 0}
+                            >
+                              {remaining <= 0 ? "Pago ✔" : "Pago"}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(b)} disabled={remaining <= 0}>
                               <Pencil className="h-3.5 w-3.5" />
                             </Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(b.id)}>
