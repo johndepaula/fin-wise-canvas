@@ -177,7 +177,7 @@ export default function Contas() {
     if (b.amount - b.amount_paid <= 0) return;
     await update(b.id, { amount_paid: b.amount });
     await addRegistro({
-      tipo: "saída",
+      tipo: "saida",
       valor: b.amount,
       categoria: b.account_type,
       descricao: `Pagamento: ${b.account_type}`,
