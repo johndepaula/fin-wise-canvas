@@ -11,9 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Wallet, AlertTriangle, CheckCircle, Search, Filter, X } from "lucide-react";
 import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
 import { CurrencyInput } from "@/components/CurrencyInput";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface FormData {
   account_type: string;
@@ -47,6 +48,18 @@ export default function Contas() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [accountSuggestions, setAccountSuggestions] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [statusFiltro, setStatusFiltro] = useState("todos");
+  const [catFiltro, setCatFiltro] = useState("todas");
+  const [dataInicial, setDataInicial] = useState("");
+  const [dataFinal, setDataFinal] = useState("");
+  const [periodoRapido, setPeriodoRapido] = useState("");
+
+  const todasCategorias = useMemo(() => {
+    const cats = new Set(bills.map(b => b.account_type));
+    return Array.from(cats).sort();
+  }, [bills]);
 
   const totals = useMemo(() => {
     const total = bills.reduce((s, b) => s + b.amount, 0);
@@ -55,12 +68,69 @@ export default function Contas() {
   }, [bills]);
 
   const sortedBills = useMemo(() => {
-    return [...bills].sort((a, b) => {
+    let list = [...bills];
+    
+    if (busca) list = list.filter((b) => b.account_type.toLowerCase().includes(busca.toLowerCase()));
+    
+    if (statusFiltro === "pago") {
+      list = list.filter(b => b.amount - b.amount_paid <= 0);
+    } else if (statusFiltro === "pendente") {
+      list = list.filter(b => b.amount - b.amount_paid > 0);
+    }
+
+    if (catFiltro !== "todas") {
+      list = list.filter(b => b.account_type === catFiltro);
+    }
+
+    if (dataInicial) {
+      list = list.filter(b => b.due_date >= dataInicial);
+    }
+    if (dataFinal) {
+      list = list.filter(b => b.due_date <= dataFinal);
+    }
+
+    return list.sort((a, b) => {
       const dateA = new Date(a.due_date + "T00:00:00").getTime();
       const dateB = new Date(b.due_date + "T00:00:00").getTime();
       return dateA - dateB;
     });
-  }, [bills]);
+  }, [bills, busca, statusFiltro, catFiltro, dataInicial, dataFinal]);
+
+  const totaisFiltrados = useMemo(() => {
+    return { pendentesCount: sortedBills.filter(b => b.amount - b.amount_paid > 0).length };
+  }, [sortedBills]);
+
+  const setQuickFilter = (type: string) => {
+    setPeriodoRapido(type);
+    const today = new Date();
+    if (type === "hoje") {
+      const dt = today.toISOString().slice(0, 10);
+      setDataInicial(dt);
+      setDataFinal(dt);
+    } else if (type === "semana") {
+      const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+      const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+      setDataInicial(firstDay.toISOString().slice(0, 10));
+      setDataFinal(lastDay.toISOString().slice(0, 10));
+    } else if (type === "mes") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setDataInicial(firstDay.toISOString().slice(0, 10));
+      setDataFinal(lastDay.toISOString().slice(0, 10));
+    } else {
+      setDataInicial("");
+      setDataFinal("");
+    }
+  };
+
+  const limparFiltros = () => {
+    setBusca("");
+    setStatusFiltro("todos");
+    setCatFiltro("todas");
+    setDataInicial("");
+    setDataFinal("");
+    setPeriodoRapido("");
+  };
 
   const openNew = useCallback(() => {
     setEditingId(null);
@@ -145,6 +215,78 @@ export default function Contas() {
           </Card>
         ))}
       </div>
+
+      {/* Filters Toggle & Counters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-2 justify-between">
+        <div className="flex gap-4 items-center">
+          <Button variant={showFilters ? "default" : "outline"} onClick={() => setShowFilters(!showFilters)} className="gap-2">
+            <Filter className="h-4 w-4" /> {showFilters ? "Ocultar Filtros" : "Pesquisar / Filtros"}
+          </Button>
+          <div className="flex gap-4 text-sm bg-card px-4 py-2 rounded-lg border border-border">
+            <div className="flex flex-col">
+              <span className="text-muted-foreground text-xs uppercase cursor-default">Contas Pendentes (Filtro)</span>
+              <span className="font-semibold text-expense">{totaisFiltrados.pendentesCount} {totaisFiltrados.pendentesCount === 1 ? 'conta' : 'contas'}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {showFilters && (
+        <Card className="bg-card border-border mb-4">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Buscar conta</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="Buscar por tipo..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9 bg-background" />
+                </div>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Status</Label>
+                <Select value={statusFiltro} onValueChange={setStatusFiltro}>
+                  <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="pago">Pagos</SelectItem>
+                    <SelectItem value="pendente">Pendentes</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[160px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Categoria</Label>
+                <Select value={catFiltro} onValueChange={setCatFiltro}>
+                  <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {todasCategorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Vencimento Inicial</Label>
+                <Input type="date" value={dataInicial} onChange={(e) => { setDataInicial(e.target.value); setPeriodoRapido(""); }} className="bg-background" />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Vencimento Final</Label>
+                <Input type="date" value={dataFinal} onChange={(e) => { setDataFinal(e.target.value); setPeriodoRapido(""); }} className="bg-background" />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 justify-between items-center pt-2 border-t border-border/50">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-muted-foreground mr-2">Filtros Rápidos:</span>
+                <Button variant={periodoRapido === "hoje" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("hoje")}>Vence Hoje</Button>
+                <Button variant={periodoRapido === "semana" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("semana")}>Esta Semana</Button>
+                <Button variant={periodoRapido === "mes" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("mes")}>Este Mês</Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={limparFiltros} className="text-muted-foreground hover:text-foreground gap-1">
+                <X className="h-4 w-4" /> Limpar Filtros
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Table */}
           <Card className="bg-card border-border overflow-hidden">

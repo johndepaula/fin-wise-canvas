@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { SuggestionDropdown } from "@/components/SuggestionDropdown";
-import { Plus, Pencil, Trash2, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, ArrowUpDown, Filter, X } from "lucide-react";
 import { formatCurrencyBRL, parseCurrencyInput } from "@/lib/currency";
 import { CurrencyInput } from "@/components/CurrencyInput";
 
@@ -42,6 +42,10 @@ export default function Registros() {
   const [tipoFiltro, setTipoFiltro] = useState("todos");
   const [catFiltro, setCatFiltro] = useState("todas");
   const [busca, setBusca] = useState("");
+  const [dataInicial, setDataInicial] = useState("");
+  const [dataFinal, setDataFinal] = useState("");
+  const [periodoRapido, setPeriodoRapido] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [sort, setSort] = useState<{ field: SortField; dir: SortDir }>({ field: "data", dir: "desc" });
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -56,13 +60,58 @@ export default function Registros() {
     if (tipoFiltro !== "todos") list = list.filter((r) => r.tipo === tipoFiltro);
     if (catFiltro !== "todas") list = list.filter((r) => r.categoria === catFiltro);
     if (busca) list = list.filter((r) => r.descricao.toLowerCase().includes(busca.toLowerCase()));
+    if (dataInicial) list = list.filter((r) => r.data.slice(0, 10) >= dataInicial);
+    if (dataFinal) list = list.filter((r) => r.data.slice(0, 10) <= dataFinal);
     list.sort((a, b) => {
       const mul = sort.dir === "asc" ? 1 : -1;
       if (sort.field === "data") return mul * (new Date(a.data).getTime() - new Date(b.data).getTime());
       return mul * (a.valor - b.valor);
     });
     return list;
-  }, [registros, tipoFiltro, catFiltro, busca, sort]);
+  }, [registros, tipoFiltro, catFiltro, busca, dataInicial, dataFinal, sort]);
+
+  const totaisFiltrados = useMemo(() => {
+    return filtrados.reduce(
+      (acc, curr) => {
+        if (curr.tipo === "entrada") acc.entradas += curr.valor;
+        else acc.saidas += curr.valor;
+        return acc;
+      },
+      { entradas: 0, saidas: 0 }
+    );
+  }, [filtrados]);
+
+  const setQuickFilter = (type: string) => {
+    setPeriodoRapido(type);
+    const today = new Date();
+    if (type === "hoje") {
+      const dt = today.toISOString().slice(0, 10);
+      setDataInicial(dt);
+      setDataFinal(dt);
+    } else if (type === "semana") {
+      const firstDay = new Date(today.setDate(today.getDate() - today.getDay()));
+      const lastDay = new Date(today.setDate(today.getDate() - today.getDay() + 6));
+      setDataInicial(firstDay.toISOString().slice(0, 10));
+      setDataFinal(lastDay.toISOString().slice(0, 10));
+    } else if (type === "mes") {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      setDataInicial(firstDay.toISOString().slice(0, 10));
+      setDataFinal(lastDay.toISOString().slice(0, 10));
+    } else {
+      setDataInicial("");
+      setDataFinal("");
+    }
+  };
+
+  const limparFiltros = () => {
+    setBusca("");
+    setTipoFiltro("todos");
+    setCatFiltro("todas");
+    setDataInicial("");
+    setDataFinal("");
+    setPeriodoRapido("");
+  };
 
   const toggleSort = (field: SortField) => {
     setSort((prev) => ({ field, dir: prev.field === field && prev.dir === "desc" ? "asc" : "desc" }));
@@ -144,28 +193,81 @@ export default function Registros() {
         </Button>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Buscar descrição..." value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9 w-[220px] bg-card border-border" />
+      {/* Filters Toggle & Counters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-2 justify-between">
+        <div className="flex gap-4 items-center">
+          <Button variant={showFilters ? "default" : "outline"} onClick={() => setShowFilters(!showFilters)} className="gap-2">
+            <Filter className="h-4 w-4" /> {showFilters ? "Ocultar Filtros" : "Pesquisar / Filtros"}
+          </Button>
+          <div className="flex gap-4 text-sm bg-card px-4 py-2 rounded-lg border border-border">
+            <div className="flex flex-col">
+              <span className="text-muted-foreground text-xs uppercase cursor-default">Entradas (Filtro)</span>
+              <span className="font-semibold text-income">+{formatCurrencyBRL(totaisFiltrados.entradas)}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="text-muted-foreground text-xs uppercase cursor-default">Saídas (Filtro)</span>
+              <span className="font-semibold text-expense">-{formatCurrencyBRL(totaisFiltrados.saidas)}</span>
+            </div>
+          </div>
         </div>
-        <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
-          <SelectTrigger className="w-[140px] bg-card border-border"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todos">Todos</SelectItem>
-            <SelectItem value="entrada">Entradas</SelectItem>
-            <SelectItem value="saida">Saídas</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={catFiltro} onValueChange={setCatFiltro}>
-          <SelectTrigger className="w-[160px] bg-card border-border"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="todas">Todas categorias</SelectItem>
-            {allCategorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-          </SelectContent>
-        </Select>
       </div>
+
+      {showFilters && (
+        <Card className="bg-card border-border">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex flex-wrap gap-3 items-end">
+              <div className="flex-1 min-w-[200px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Buscar descrição</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input placeholder="O que você procura?" value={busca} onChange={(e) => setBusca(e.target.value)} className="pl-9 bg-background" />
+                </div>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Tipo</Label>
+                <Select value={tipoFiltro} onValueChange={setTipoFiltro}>
+                  <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="entrada">Entradas</SelectItem>
+                    <SelectItem value="saida">Saídas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[160px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Categoria</Label>
+                <Select value={catFiltro} onValueChange={setCatFiltro}>
+                  <SelectTrigger className="bg-background"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas</SelectItem>
+                    {allCategorias.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Data Inicial</Label>
+                <Input type="date" value={dataInicial} onChange={(e) => { setDataInicial(e.target.value); setPeriodoRapido(""); }} className="bg-background" />
+              </div>
+              <div className="w-[140px]">
+                <Label className="text-xs mb-1 block text-muted-foreground">Data Final</Label>
+                <Input type="date" value={dataFinal} onChange={(e) => { setDataFinal(e.target.value); setPeriodoRapido(""); }} className="bg-background" />
+              </div>
+            </div>
+            
+            <div className="flex flex-wrap gap-2 justify-between items-center pt-2 border-t border-border/50">
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-xs text-muted-foreground mr-2">Filtros Rápidos:</span>
+                <Button variant={periodoRapido === "hoje" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("hoje")}>Hoje</Button>
+                <Button variant={periodoRapido === "semana" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("semana")}>Esta Semana</Button>
+                <Button variant={periodoRapido === "mes" ? "secondary" : "outline"} size="sm" onClick={() => setQuickFilter("mes")}>Este Mês</Button>
+              </div>
+              <Button variant="ghost" size="sm" onClick={limparFiltros} className="text-muted-foreground hover:text-foreground gap-1">
+                <X className="h-4 w-4" /> Limpar Filtros
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Table */}
       <Card className="bg-card border-border overflow-hidden">
