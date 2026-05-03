@@ -1,15 +1,15 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useMonthlyClosure, ClosureFull } from "@/hooks/useMonthlyClosure";
+import { useHistoricalMonths, HistoricalMonth } from "@/hooks/useHistoricalMonths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatCurrencyBRL } from "@/lib/currency";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, CalendarCheck, Archive, Eye, Lock } from "lucide-react";
+import { FileText, Archive, Eye, Lock } from "lucide-react";
 
 const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 function formatMonthLabel(m: string) {
@@ -57,7 +57,8 @@ const Custom3DBar = (props: any) => {
 
 export default function Relatorios() {
   const { registros } = useRegistrosContext();
-  const { closures, closeMonth, loadClosure } = useMonthlyClosure();
+  const { closures, loadClosure } = useMonthlyClosure();
+  const { months: historicalMonths } = useHistoricalMonths();
   const formatCurrency = formatCurrencyBRL;
   const currentYear = new Date().getFullYear();
   const now = new Date();
@@ -66,11 +67,37 @@ export default function Relatorios() {
   const [openClosure, setOpenClosure] = useState<ClosureFull | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
 
-  const handleViewClosure = async (month: string) => {
-    const c = await loadClosure(month);
-    if (c) {
-      setOpenClosure(c);
-      setViewOpen(true);
+  // Combine auto-derived past months with closures (closure takes precedence)
+  const allMonths = useMemo(() => {
+    const map: Record<string, { month: string; totals: any; source: "closure" | "auto" }> = {};
+    historicalMonths.forEach((m) => {
+      map[m.month] = { month: m.month, totals: m.totals, source: "auto" };
+    });
+    closures.forEach((c) => {
+      map[c.month] = { month: c.month, totals: c.totals, source: "closure" };
+    });
+    return Object.values(map)
+      .filter((m) => m.month !== currentMonthKey)
+      .sort((a, b) => b.month.localeCompare(a.month));
+  }, [historicalMonths, closures, currentMonthKey]);
+
+  const handleViewMonth = async (m: { month: string; source: "closure" | "auto" }) => {
+    if (m.source === "closure") {
+      const c = await loadClosure(m.month);
+      if (c) { setOpenClosure(c); setViewOpen(true); }
+    } else {
+      const hist = historicalMonths.find((h) => h.month === m.month);
+      if (hist) {
+        setOpenClosure({
+          id: m.month,
+          month: m.month,
+          closed_at: new Date().toISOString(),
+          totals: hist.totals,
+          records: hist.records,
+          bills: hist.bills,
+        } as ClosureFull);
+        setViewOpen(true);
+      }
     }
   };
 
@@ -78,7 +105,7 @@ export default function Relatorios() {
     const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     const data = meses.map((mes, index) => ({ mes, mesIndex: index, entradas: 0, saidas: 0, resultado: 0 }));
 
-    // Live records
+    // Current month live
     registros.forEach((r) => {
       const date = new Date(r.data);
       if (date.getFullYear() === currentYear) {
@@ -87,17 +114,17 @@ export default function Relatorios() {
         else if (r.tipo === "saida") data[mesIndex].saidas += Number(r.valor) || 0;
       }
     });
-    // Closed months
-    closures.forEach((c) => {
-      const [y, m] = c.month.split("-").map(Number);
+    // Past months
+    allMonths.forEach((m) => {
+      const [y, mo] = m.month.split("-").map(Number);
       if (y === currentYear) {
-        data[m - 1].entradas += Number(c.totals?.entradas || 0);
-        data[m - 1].saidas += Number(c.totals?.saidas || 0);
+        data[mo - 1].entradas = Number(m.totals?.entradas || 0);
+        data[mo - 1].saidas = Number(m.totals?.saidas || 0);
       }
     });
     data.forEach((d) => { d.resultado = d.entradas - d.saidas; });
     return data;
-  }, [registros, closures, currentYear]);
+  }, [registros, allMonths, currentYear]);
 
   // Closure detail computed sections
   const closureCategorias = useMemo(() => {
@@ -111,65 +138,43 @@ export default function Relatorios() {
 
   return (
     <div className="space-y-8 max-w-7xl animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Relatórios e Análises</h1>
-          <p className="text-muted-foreground text-sm mt-1">Histórico mensal e desempenho anual</p>
-        </div>
-
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
-              <CalendarCheck className="h-4 w-4" />
-              Fechar mês atual
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Encerrar {formatMonthLabel(currentMonthKey)}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Todos os registros e contas deste mês serão movidos para os Relatórios em modo somente leitura.
-                Os dados não serão perdidos. O próximo mês começará vazio.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => closeMonth(currentMonthKey)}>Encerrar mês</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Relatórios e Análises</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Histórico mensal automático — meses anteriores aparecem aqui sem precisar de fechamento manual.
+        </p>
       </div>
 
-      {/* Closed months list */}
+      {/* Past months list (auto) */}
       <Card className="bg-card border-border shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Archive className="h-4 w-4" /> Meses Encerrados
+            <Archive className="h-4 w-4" /> Meses Anteriores
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {closures.length === 0 ? (
+          {allMonths.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum mês encerrado ainda. Use o botão acima para arquivar o mês atual.
+              Nenhum mês anterior com dados. Quando o mês mudar, os registros do mês anterior aparecerão aqui automaticamente.
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {closures.map((c) => (
+              {allMonths.map((m) => (
                 <button
-                  key={c.id}
-                  onClick={() => handleViewClosure(c.month)}
+                  key={m.month}
+                  onClick={() => handleViewMonth(m)}
                   className="text-left p-4 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-accent/30 transition-all group"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-sm">{formatMonthLabel(c.month)}</span>
+                    <span className="font-semibold text-sm">{formatMonthLabel(m.month)}</span>
                     <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Leitura</Badge>
                   </div>
                   <div className="space-y-0.5 text-xs">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(c.totals?.entradas || 0))}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(c.totals?.saidas || 0))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(m.totals?.entradas || 0))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(m.totals?.saidas || 0))}</span></div>
                     <div className="flex justify-between font-semibold pt-1 border-t border-border/50 mt-1">
                       <span>Saldo</span>
-                      <span className={Number(c.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(c.totals?.saldo || 0))}</span>
+                      <span className={Number(m.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(m.totals?.saldo || 0))}</span>
                     </div>
                   </div>
                   <div className="mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
