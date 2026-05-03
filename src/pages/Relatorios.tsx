@@ -175,7 +175,8 @@ export default function Relatorios() {
         if (r.tipo === "entrada") entradas += Number(r.valor) || 0;
         if (r.tipo === "saida") {
           saidas += Number(r.valor) || 0;
-          categorias[r.categoria] = (categorias[r.categoria] || 0) + (Number(r.valor) || 0);
+          const normalizedCat = r.categoria.charAt(0).toUpperCase() + r.categoria.slice(1).toLowerCase();
+          categorias[normalizedCat] = (categorias[normalizedCat] || 0) + (Number(r.valor) || 0);
         }
       }
     });
@@ -201,9 +202,17 @@ export default function Relatorios() {
     if (!openClosure) return [];
     const map: Record<string, number> = {};
     (openClosure.records || []).filter((r: any) => r.tipo === "saida").forEach((r: any) => {
-      map[r.categoria] = (map[r.categoria] || 0) + Number(r.valor);
+      const normalizedCat = r.categoria.charAt(0).toUpperCase() + r.categoria.slice(1).toLowerCase();
+      map[normalizedCat] = (map[normalizedCat] || 0) + Number(r.valor);
     });
-    return Object.entries(map).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor);
+    const totalSaidas = Object.values(map).reduce((s, v) => s + v, 0);
+    return Object.entries(map)
+      .map(([nome, valor]) => ({ 
+        nome, 
+        valor,
+        percentual: totalSaidas > 0 ? (valor / totalSaidas) * 100 : 0
+      }))
+      .sort((a, b) => b.valor - a.valor);
   }, [openClosure]);
 
   return (
@@ -553,14 +562,29 @@ export default function Relatorios() {
 
               {closureCategorias.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold mb-2">Saídas por categoria</h3>
-                  <div className="space-y-2">
-                    {closureCategorias.map((c) => (
-                      <div key={c.nome} className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">{c.nome}</span>
-                        <span className="font-medium">{formatCurrency(c.valor)}</span>
-                      </div>
-                    ))}
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <TrendingDown className="h-4 w-4 text-expense" />
+                    Saídas por Categoria
+                  </h3>
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30">
+                          <TableHead className="h-9 text-xs">Categoria</TableHead>
+                          <TableHead className="h-9 text-xs text-right">Total Gasto</TableHead>
+                          <TableHead className="h-9 text-xs text-right">%</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {closureCategorias.map((c) => (
+                          <TableRow key={c.nome} className="h-9">
+                            <TableCell className="py-2 text-xs font-medium">{c.nome}</TableCell>
+                            <TableCell className="py-2 text-xs text-right font-semibold">{formatCurrency(c.valor)}</TableCell>
+                            <TableCell className="py-2 text-xs text-right text-muted-foreground">{c.percentual.toFixed(1)}%</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
                   </div>
                 </div>
               )}

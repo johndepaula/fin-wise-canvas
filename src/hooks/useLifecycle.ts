@@ -47,14 +47,34 @@ export function useLifecycle() {
       .reduce((sum, r) => sum + r.valor, 0);
     const prevSaldo = prevEntradas - prevSaidas;
 
-    // 3. Create "Saldo do mês anterior" record (even if 0, to mark transition as done)
-    await addRegistro({
-      tipo: "entrada",
-      descricao: "Saldo do mês anterior",
-      valor: prevSaldo > 0 ? prevSaldo : 0,
-      categoria: "Outros",
-      data: startOfMonth,
-    });
+    // 3. Create balance transition record
+    if (prevSaldo > 0) {
+      await addRegistro({
+        tipo: "entrada",
+        descricao: "Saldo do mês anterior",
+        valor: prevSaldo,
+        categoria: "Outros",
+        data: startOfMonth,
+      });
+    } else if (prevSaldo < 0) {
+      await addRegistro({
+        tipo: "saida",
+        descricao: "Saldo negativo do mês anterior",
+        valor: Math.abs(prevSaldo),
+        categoria: "Outros",
+        data: startOfMonth,
+      });
+    } else {
+      // If 0, create a marker record to avoid re-running transition
+      await addRegistro({
+        tipo: "entrada",
+        descricao: "Saldo do mês anterior",
+        valor: 0,
+        categoria: "Outros",
+        data: startOfMonth,
+      });
+    }
+
 
     // 4. Persistence of Accounts (Bills)
     const prevMonthBills = bills.filter(
