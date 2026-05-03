@@ -65,7 +65,6 @@ export function useLifecycle() {
         data: startOfMonth,
       });
     } else {
-      // If 0, create a marker record to avoid re-running transition
       await addRegistro({
         tipo: "entrada",
         descricao: "Saldo do mês anterior",
@@ -75,8 +74,7 @@ export function useLifecycle() {
       });
     }
 
-
-    // 4. Persistence of Accounts (Bills)
+    // 4. Persistence of Accounts (Bills) - CLONE BEFORE CLOSURE
     const prevMonthBills = bills.filter(
       (b) => b.due_date >= startOfPrevMonth && b.due_date <= endOfPrevMonth
     );
@@ -109,14 +107,57 @@ export function useLifecycle() {
       }
     }
 
+    // 5. Automated Closure of Previous Month
+    const prevMonthKey = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}`;
+    
+    // Check if already closed manually
+    const { data: existingClosure } = await supabase
+      .from("monthly_closures")
+      .select("id")
+      .eq("month", prevMonthKey)
+      .maybeSingle();
+
+    if (!existingClosure) {
+      // Fetch all records and bills of previous month again to ensure we have the latest
+      // (This is safer than using the filtered lists above)
+      const [{ data: recordsToClose }, { data: billsToClose }] = await Promise.all([
+        supabase.from("financial_records").select("*").gte("data", startOfPrevMonth).lte("data", endOfPrevMonth),
+        supabase.from("bills").select("*").gte("due_date", startOfPrevMonth).lte("due_date", endOfPrevMonth),
+      ]);
+
+      if ((recordsToClose && recordsToClose.length) || (billsToClose && billsToClose.length)) {
+        const ent = (recordsToClose || []).filter(r => r.tipo === "entrada").reduce((s, r) => s + Number(r.valor), 0);
+        const sai = (recordsToClose || []).filter(r => r.tipo === "saida").reduce((s, r) => s + Number(r.valor), 0);
+        
+        await supabase.from("monthly_closures").insert({
+          user_id: user.id,
+          month: prevMonthKey,
+          records: recordsToClose || [],
+          bills: billsToClose || [],
+          totals: {
+            entradas: ent,
+            saidas: sai,
+            saldo: ent - sai,
+            registrosCount: recordsToClose?.length || 0,
+            billsCount: billsToClose?.length || 0,
+          },
+        });
+
+        // Delete originals to maintain "fixed history" in closures table
+        if (recordsToClose?.length) await supabase.from("financial_records").delete().in("id", recordsToClose.map(r => r.id));
+        if (billsToClose?.length) await supabase.from("bills").delete().in("id", billsToClose.map(b => b.id));
+      }
+    }
+
     import("@/hooks/use-toast").then(({ toast }) => {
       toast({
-        title: "Novo mês iniciado!",
-        description: `Saldo transportado e ${billsCloned} contas renovadas.`,
+        title: "Transição de mês concluída!",
+        description: `Saldo transportado, ${billsCloned} contas renovadas e histórico do mês anterior arquivado.`,
       });
     });
 
   }, [user, registros, bills, loadingRegistros, loadingBills, addRegistro, addBill]);
+
 
   useEffect(() => {
     if (user && !loadingRegistros && !loadingBills) {

@@ -80,8 +80,11 @@ const renderCustomBarLabel = (props: any) => {
   );
 };
 
+import { useBillsContext } from "@/contexts/BillsContext";
+
 export default function Relatorios() {
   const { registros } = useRegistrosContext();
+  const { bills } = useBillsContext();
   const { closures, loadClosure } = useMonthlyClosure();
   const { months: historicalMonths } = useHistoricalMonths();
   const formatCurrency = formatCurrencyBRL;
@@ -189,14 +192,20 @@ export default function Relatorios() {
       }))
       .sort((a, b) => b.valor - a.valor);
 
+    const contasDoMes = bills.filter((b) => {
+      const date = new Date(b.due_date + "T00:00:00");
+      return date.getMonth().toString() === selectedMonth && date.getFullYear().toString() === selectedYear;
+    }).sort((a, b) => a.due_date.localeCompare(b.due_date));
+
     return { 
       entradas, 
       saidas, 
       saldo: entradas - saidas, 
       categorias: categoriasArray,
-      topCategorias: categoriasArray.slice(0, 5)
+      topCategorias: categoriasArray.slice(0, 5),
+      contas: contasDoMes
     };
-  }, [registros, selectedMonth, selectedYear]);
+  }, [registros, bills, selectedMonth, selectedYear]);
 
   const closureCategorias = useMemo(() => {
     if (!openClosure) return [];
@@ -454,6 +463,54 @@ export default function Relatorios() {
         </div>
       </div>
 
+      <Card className="bg-card border-border overflow-hidden">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <FileText className="h-5 w-5 text-primary" />
+            Contas de {meses[Number(selectedMonth)]}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/30">
+                <TableHead className="h-10 text-xs">Tipo</TableHead>
+                <TableHead className="h-10 text-xs">Vencimento</TableHead>
+                <TableHead className="h-10 text-xs text-right">Valor</TableHead>
+                <TableHead className="h-10 text-xs text-right">Pago</TableHead>
+                <TableHead className="h-10 text-xs">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dadosMensais.contas.length > 0 ? (
+                dadosMensais.contas.map((b) => {
+                  const remaining = Number(b.amount) - Number(b.amount_paid);
+                  return (
+                    <TableRow key={b.id} className="h-10">
+                      <TableCell className="py-2 text-xs font-medium">{b.account_type}</TableCell>
+                      <TableCell className="py-2 text-xs">{b.due_date.split("-").reverse().join("/")}</TableCell>
+                      <TableCell className="py-2 text-xs text-right font-semibold">{formatCurrency(b.amount)}</TableCell>
+                      <TableCell className="py-2 text-xs text-right text-income">{formatCurrency(b.amount_paid)}</TableCell>
+                      <TableCell className="py-2">
+                        <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 ${remaining <= 0 ? "text-income border-income/30 bg-income/5" : "text-expense border-expense/30 bg-expense/5"}`}>
+                          {remaining <= 0 ? "Pago" : "Não pago"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground text-sm">
+                    Nenhuma conta registrada para este mês.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
       {/* Annual Evolution */}
       <Card className="bg-card border-border shadow-sm">
         <CardHeader className="pb-4">
@@ -548,7 +605,7 @@ export default function Relatorios() {
                             <TableCell className="text-xs">{(b.due_date || "").split("-").reverse().join("/")}</TableCell>
                             <TableCell className="text-xs text-right tabular-nums">{formatCurrency(Number(b.amount))}</TableCell>
                             <TableCell className="text-xs text-right tabular-nums text-income">{formatCurrency(Number(b.amount_paid))}</TableCell>
-                            <TableCell><Badge variant="outline" className={`text-xs ${remaining <= 0 ? "text-income border-income/30" : "text-expense border-expense/30"}`}>{remaining <= 0 ? "Pago" : "Pendente"}</Badge></TableCell>
+                            <TableCell><Badge variant="outline" className={`text-xs ${remaining <= 0 ? "text-income border-income/30" : "text-expense border-expense/30"}`}>{remaining <= 0 ? "Pago" : "Não pago"}</Badge></TableCell>
                           </TableRow>
                         );
                       })}
