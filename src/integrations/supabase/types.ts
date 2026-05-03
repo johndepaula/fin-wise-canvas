@@ -176,6 +176,36 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_closures: {
+        Row: {
+          bills: Json
+          closed_at: string
+          id: string
+          month: string
+          records: Json
+          totals: Json
+          user_id: string
+        }
+        Insert: {
+          bills?: Json
+          closed_at?: string
+          id?: string
+          month: string
+          records?: Json
+          totals?: Json
+          user_id: string
+        }
+        Update: {
+          bills?: Json
+          closed_at?: string
+          id?: string
+          month?: string
+          records?: Json
+          totals?: Json
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
