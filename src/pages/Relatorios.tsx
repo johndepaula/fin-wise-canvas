@@ -1,15 +1,15 @@
 import { useMemo, useState, useEffect } from "react";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useMonthlyClosure, ClosureFull } from "@/hooks/useMonthlyClosure";
+import { useHistoricalMonths, HistoricalMonth } from "@/hooks/useHistoricalMonths";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { formatCurrencyBRL } from "@/lib/currency";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Download, CalendarCheck, Archive, Eye, Lock } from "lucide-react";
+import { FileText, Archive, Eye, Lock } from "lucide-react";
 
 const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 function formatMonthLabel(m: string) {
