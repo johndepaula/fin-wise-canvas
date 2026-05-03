@@ -19,7 +19,19 @@ export function useBills() {
 
   const fetch = useCallback(async () => {
     if (!user) { setBills([]); setLoading(false); return; }
-    const { data, error } = await supabase.from("bills").select("*").order("due_date", { ascending: true });
+    // Apenas mês atual — contas anteriores aparecem em Relatórios
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const monthStart = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const next = new Date(y, m + 1, 1);
+    const nextMonthStart = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
+    const { data, error } = await supabase
+      .from("bills")
+      .select("*")
+      .gte("due_date", monthStart)
+      .lt("due_date", nextMonthStart)
+      .order("due_date", { ascending: true });
     if (error) {
       toast({ title: "Erro ao carregar contas", description: error.message, variant: "destructive" });
     } else {
