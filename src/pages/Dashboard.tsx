@@ -94,17 +94,17 @@ export default function Dashboard() {
     const receitas = filtrados.filter((r) => r.tipo === "entrada").reduce((s, r) => s + r.valor, 0);
     const despesas = filtrados.filter((r) => r.tipo === "saida").reduce((s, r) => s + r.valor, 0);
     const saldo = receitas - despesas;
-    
+
     const data: { name: string; valor: number; color: string }[] = [];
-    
+
     if (receitas > 0) {
       data.push({ name: "Receitas", valor: Math.round(receitas * 100) / 100, color: PIE_COLORS_INCOME });
     }
-    
+
     if (despesas > 0) {
       data.push({ name: "Despesas", valor: Math.round(despesas * 100) / 100, color: PIE_COLORS_EXPENSE });
     }
-    
+
     return data;
   }, [filtrados]);
 
@@ -136,8 +136,11 @@ export default function Dashboard() {
     .filter((r) => r.tipo === "entrada" && r.descricao !== "Saldo do mês anterior")
     .reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
-  const rawSaldo = totalGeralEntradas - totalGeralSaidas;
-  const saldoEmConta = (Number.isNaN(rawSaldo) || !Number.isFinite(rawSaldo)) ? 0 : rawSaldo;
+  let saldoEmConta = totalGeralEntradas - totalGeralSaidas;
+
+  if (Number.isNaN(saldoEmConta) || !Number.isFinite(saldoEmConta)) {
+    saldoEmConta = 0;
+  }
 
 
 
@@ -160,8 +163,8 @@ export default function Dashboard() {
   }
 
   return (
-     <div className="space-y-8 max-w-7xl">
-       {/* Profile Header */}
+    <div className="space-y-8 max-w-7xl">
+      {/* Profile Header */}
       <div className="flex items-center gap-3 animate-fade-in-up">
         <Avatar className="h-9 w-9 shrink-0">
           {profile?.avatar_url && <AvatarImage src={profile.avatar_url} alt={displayName} />}
@@ -290,18 +293,18 @@ export default function Dashboard() {
                     animationDuration={800}
                     label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                     labelLine={true}
-                    
+
                   >
                     {distribuicaoFinanceira.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
                     ))}
                   </Pie>
-                    <Tooltip
-                     contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "#FFFFFF", fontSize: 12 }}
-                     itemStyle={{ color: "#FFFFFF" }}
-                     labelStyle={{ color: "#FFFFFF" }}
-                     formatter={(value: number) => [formatCurrency(value), "Valor"]}
-                   />
+                  <Tooltip
+                    contentStyle={{ background: "hsl(224 18% 13%)", border: "1px solid hsl(224 12% 18%)", borderRadius: 8, color: "#FFFFFF", fontSize: 12 }}
+                    itemStyle={{ color: "#FFFFFF" }}
+                    labelStyle={{ color: "#FFFFFF" }}
+                    formatter={(value: number) => [formatCurrency(value), "Valor"]}
+                  />
                   <Legend
                     wrapperStyle={{ fontSize: 12, color: "hsl(215 12% 50%)" }}
                     formatter={(value) => <span style={{ color: "hsl(215 12% 70%)" }}>{value}</span>}

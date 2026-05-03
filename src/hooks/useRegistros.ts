@@ -11,9 +11,18 @@ export function useRegistros() {
 
   const fetchRegistros = useCallback(async () => {
     if (!user) { setRegistros([]); setLoading(false); return; }
+    // Apenas mês atual — meses anteriores ficam visíveis somente em Relatórios
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const monthStart = `${y}-${String(m + 1).padStart(2, "0")}-01`;
+    const next = new Date(y, m + 1, 1);
+    const nextMonthStart = `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, "0")}-01`;
     const { data, error } = await supabase
       .from("financial_records")
       .select("*")
+      .gte("data", monthStart)
+      .lt("data", nextMonthStart)
       .order("data", { ascending: false });
 
     if (error) {
