@@ -111,65 +111,43 @@ export default function Relatorios() {
 
   return (
     <div className="space-y-8 max-w-7xl animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Relatórios e Análises</h1>
-          <p className="text-muted-foreground text-sm mt-1">Histórico mensal e desempenho anual</p>
-        </div>
-
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md">
-              <CalendarCheck className="h-4 w-4" />
-              Fechar mês atual
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Encerrar {formatMonthLabel(currentMonthKey)}?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Todos os registros e contas deste mês serão movidos para os Relatórios em modo somente leitura.
-                Os dados não serão perdidos. O próximo mês começará vazio.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={() => closeMonth(currentMonthKey)}>Encerrar mês</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Relatórios e Análises</h1>
+        <p className="text-muted-foreground text-sm mt-1">
+          Histórico mensal automático — meses anteriores aparecem aqui sem precisar de fechamento manual.
+        </p>
       </div>
 
-      {/* Closed months list */}
+      {/* Past months list (auto) */}
       <Card className="bg-card border-border shadow-sm">
         <CardHeader className="pb-4">
           <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Archive className="h-4 w-4" /> Meses Encerrados
+            <Archive className="h-4 w-4" /> Meses Anteriores
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {closures.length === 0 ? (
+          {allMonths.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum mês encerrado ainda. Use o botão acima para arquivar o mês atual.
+              Nenhum mês anterior com dados. Quando o mês mudar, os registros do mês anterior aparecerão aqui automaticamente.
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {closures.map((c) => (
+              {allMonths.map((m) => (
                 <button
-                  key={c.id}
-                  onClick={() => handleViewClosure(c.month)}
+                  key={m.month}
+                  onClick={() => handleViewMonth(m)}
                   className="text-left p-4 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-accent/30 transition-all group"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-sm">{formatMonthLabel(c.month)}</span>
+                    <span className="font-semibold text-sm">{formatMonthLabel(m.month)}</span>
                     <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Leitura</Badge>
                   </div>
                   <div className="space-y-0.5 text-xs">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(c.totals?.entradas || 0))}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(c.totals?.saidas || 0))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(m.totals?.entradas || 0))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(m.totals?.saidas || 0))}</span></div>
                     <div className="flex justify-between font-semibold pt-1 border-t border-border/50 mt-1">
                       <span>Saldo</span>
-                      <span className={Number(c.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(c.totals?.saldo || 0))}</span>
+                      <span className={Number(m.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(m.totals?.saldo || 0))}</span>
                     </div>
                   </div>
                   <div className="mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
