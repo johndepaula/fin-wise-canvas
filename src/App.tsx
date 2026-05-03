@@ -17,6 +17,7 @@ import Indicacoes from "./pages/Indicacoes";
 import Feedback from "./pages/Feedback";
 import NotFound from "./pages/NotFound";
 import { VoiceAssistant } from "./components/VoiceAssistant";
+import { LifecycleGuard } from "./components/LifecycleGuard";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,8 @@ function getWelcomeMessage() {
   const lang = navigator.language?.slice(0, 2) || "en";
   return welcomeTranslations[lang] || welcomeTranslations.en;
 }
+
+import { BillsProvider } from "@/contexts/BillsContext";
 
 function ProtectedRoutes() {
   const { session, loading } = useAuth();
@@ -83,20 +86,24 @@ function ProtectedRoutes() {
 
   return (
     <RegistrosProvider>
-      <AppLayout>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/registros" element={<Registros />} />
-          <Route path="/contas" element={<Contas />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/perfil" element={<Perfil />} />
-          <Route path="/indicacoes" element={<Indicacoes />} />
-          <Route path="/feedback" element={<Feedback />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <VoiceAssistant />
-      </AppLayout>
+      <BillsProvider>
+        <LifecycleGuard>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/registros" element={<Registros />} />
+              <Route path="/contas" element={<Contas />} />
+              <Route path="/relatorios" element={<Relatorios />} />
+              <Route path="/configuracoes" element={<Configuracoes />} />
+              <Route path="/perfil" element={<Perfil />} />
+              <Route path="/indicacoes" element={<Indicacoes />} />
+              <Route path="/feedback" element={<Feedback />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <VoiceAssistant />
+          </AppLayout>
+        </LifecycleGuard>
+      </BillsProvider>
     </RegistrosProvider>
   );
 }

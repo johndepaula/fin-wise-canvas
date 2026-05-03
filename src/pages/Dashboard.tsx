@@ -132,13 +132,12 @@ export default function Dashboard() {
 
   const formatCurrency = formatCurrencyBRL;
 
-  const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
+  const totalGeralEntradas = registros
+    .filter((r) => r.tipo === "entrada" && r.descricao !== "Saldo do mês anterior")
+    .reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
-  const saldoEmConta = totalGeralEntradas - totalGeralSaidas;
-  
-  if (Number.isNaN(saldoEmConta) || !Number.isFinite(saldoEmConta)) {
-    saldoEmConta = 0;
-  }
+  const rawSaldo = totalGeralEntradas - totalGeralSaidas;
+  const saldoEmConta = (Number.isNaN(rawSaldo) || !Number.isFinite(rawSaldo)) ? 0 : rawSaldo;
 
 
 

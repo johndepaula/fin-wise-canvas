@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
-import { useBills, Bill } from "@/hooks/useBills";
-import { useRegistros } from "@/hooks/useRegistros";
 import { useInputHistory } from "@/hooks/useInputHistory";
+import type { Bill } from "@/hooks/useBills";
 import { SuggestionDropdown } from "@/components/SuggestionDropdown";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,9 +40,12 @@ function getDueStatus(due_date: string) {
   return "ok";
 }
 
+import { useBillsContext } from "@/contexts/BillsContext";
+import { useRegistrosContext } from "@/contexts/RegistrosContext";
+
 export default function Contas() {
-  const { bills, loading, add, update, remove } = useBills();
-  const { adicionar: addRegistro } = useRegistros();
+  const { bills, loading, add, update, remove } = useBillsContext();
+  const { adicionar: addRegistro } = useRegistrosContext();
   const accountHistory = useInputHistory("tipo_conta");
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
