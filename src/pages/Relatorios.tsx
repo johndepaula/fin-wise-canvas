@@ -57,7 +57,8 @@ const Custom3DBar = (props: any) => {
 
 export default function Relatorios() {
   const { registros } = useRegistrosContext();
-  const { closures, closeMonth, loadClosure } = useMonthlyClosure();
+  const { closures, loadClosure } = useMonthlyClosure();
+  const { months: historicalMonths } = useHistoricalMonths();
   const formatCurrency = formatCurrencyBRL;
   const currentYear = new Date().getFullYear();
   const now = new Date();
@@ -66,11 +67,37 @@ export default function Relatorios() {
   const [openClosure, setOpenClosure] = useState<ClosureFull | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
 
-  const handleViewClosure = async (month: string) => {
-    const c = await loadClosure(month);
-    if (c) {
-      setOpenClosure(c);
-      setViewOpen(true);
+  // Combine auto-derived past months with closures (closure takes precedence)
+  const allMonths = useMemo(() => {
+    const map: Record<string, { month: string; totals: any; source: "closure" | "auto" }> = {};
+    historicalMonths.forEach((m) => {
+      map[m.month] = { month: m.month, totals: m.totals, source: "auto" };
+    });
+    closures.forEach((c) => {
+      map[c.month] = { month: c.month, totals: c.totals, source: "closure" };
+    });
+    return Object.values(map)
+      .filter((m) => m.month !== currentMonthKey)
+      .sort((a, b) => b.month.localeCompare(a.month));
+  }, [historicalMonths, closures, currentMonthKey]);
+
+  const handleViewMonth = async (m: { month: string; source: "closure" | "auto" }) => {
+    if (m.source === "closure") {
+      const c = await loadClosure(m.month);
+      if (c) { setOpenClosure(c); setViewOpen(true); }
+    } else {
+      const hist = historicalMonths.find((h) => h.month === m.month);
+      if (hist) {
+        setOpenClosure({
+          id: m.month,
+          month: m.month,
+          closed_at: new Date().toISOString(),
+          totals: hist.totals,
+          records: hist.records,
+          bills: hist.bills,
+        } as ClosureFull);
+        setViewOpen(true);
+      }
     }
   };
 
@@ -78,7 +105,7 @@ export default function Relatorios() {
     const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
     const data = meses.map((mes, index) => ({ mes, mesIndex: index, entradas: 0, saidas: 0, resultado: 0 }));
 
-    // Live records
+    // Current month live
     registros.forEach((r) => {
       const date = new Date(r.data);
       if (date.getFullYear() === currentYear) {
@@ -87,17 +114,17 @@ export default function Relatorios() {
         else if (r.tipo === "saida") data[mesIndex].saidas += Number(r.valor) || 0;
       }
     });
-    // Closed months
-    closures.forEach((c) => {
-      const [y, m] = c.month.split("-").map(Number);
+    // Past months
+    allMonths.forEach((m) => {
+      const [y, mo] = m.month.split("-").map(Number);
       if (y === currentYear) {
-        data[m - 1].entradas += Number(c.totals?.entradas || 0);
-        data[m - 1].saidas += Number(c.totals?.saidas || 0);
+        data[mo - 1].entradas = Number(m.totals?.entradas || 0);
+        data[mo - 1].saidas = Number(m.totals?.saidas || 0);
       }
     });
     data.forEach((d) => { d.resultado = d.entradas - d.saidas; });
     return data;
-  }, [registros, closures, currentYear]);
+  }, [registros, allMonths, currentYear]);
 
   // Closure detail computed sections
   const closureCategorias = useMemo(() => {
