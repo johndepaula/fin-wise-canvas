@@ -1,8 +1,4 @@
-<<<<<<< HEAD
-import { useMemo, useState } from "react";
-=======
 import { useMemo, useState, useEffect } from "react";
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useMonthlyClosure, ClosureFull } from "@/hooks/useMonthlyClosure";
 import { useHistoricalMonths, HistoricalMonth } from "@/hooks/useHistoricalMonths";
@@ -11,31 +7,26 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { formatCurrencyBRL } from "@/lib/currency";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-<<<<<<< HEAD
-import { FileText, BarChart3, ArrowUpCircle, ArrowDownCircle, Wallet, TrendingDown } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { FileText, BarChart3, Download, Calendar, ArrowUpCircle, ArrowDownCircle, Wallet, TrendingDown, Archive, Eye, Lock } from "lucide-react";
 
 const PIE_COLORS = [
   "#2DD4BF", "#22D3EE", "#818CF8", "#C084FC", "#F472B6",
   "#FB7185", "#FDA4AF", "#FCD34D", "#A3E635", "#4ADE80",
 ];
-=======
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { FileText, Archive, Eye, Lock } from "lucide-react";
 
 const MONTH_NAMES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+
 function formatMonthLabel(m: string) {
   const [y, mm] = m.split("-").map(Number);
   return `${MONTH_NAMES[mm - 1]} ${y}`;
 }
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
 
 const CustomAnualTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-<<<<<<< HEAD
     const formatCurrency = formatCurrencyBRL;
     
     return (
@@ -46,17 +37,6 @@ const CustomAnualTooltip = ({ active, payload, label }: any) => {
         <div className="my-1 border-t border-border" />
         <p className={`text-sm font-bold ${data.resultado >= 0 ? 'text-income' : 'text-expense'}`}>
           Resultado: {formatCurrency(data.resultado)}
-=======
-    const currentYear = new Date().getFullYear();
-    return (
-      <div className="bg-card border-border border rounded-lg p-3 shadow-lg">
-        <p className="font-semibold mb-2">{label} {currentYear}</p>
-        <p className="text-income text-sm">Entradas: {formatCurrencyBRL(data.entradas)}</p>
-        <p className="text-expense text-sm">Saídas: {formatCurrencyBRL(data.saidas)}</p>
-        <div className="my-1 border-t border-border" />
-        <p className={`text-sm font-bold ${data.resultado >= 0 ? 'text-income' : 'text-expense'}`}>
-          Resultado: {formatCurrencyBRL(data.resultado)}
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
         </p>
       </div>
     );
@@ -67,17 +47,17 @@ const CustomAnualTooltip = ({ active, payload, label }: any) => {
 const Custom3DBar = (props: any) => {
   const { x, y, width, height, payload } = props;
   if (!height || Number.isNaN(height)) return null;
+
   const isPositive = payload.resultado >= 0;
+  
   const colorFront = isPositive ? "rgba(34, 197, 94, 0.85)" : "rgba(239, 68, 68, 0.85)";
   const colorTop = isPositive ? "rgba(74, 222, 128, 0.95)" : "rgba(248, 113, 113, 0.95)";
   const colorSide = isPositive ? "rgba(21, 128, 61, 0.95)" : "rgba(185, 28, 28, 0.95)";
-<<<<<<< HEAD
 
-=======
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
   const depth = width * 0.3;
   const dx = depth;
   const dy = -depth * 0.7;
+
   return (
     <g>
       <path d={`M${x},${y} L${x+dx},${y+dy} L${x+width+dx},${y+dy} L${x+width},${y} Z`} fill={colorTop} />
@@ -87,7 +67,6 @@ const Custom3DBar = (props: any) => {
   );
 };
 
-<<<<<<< HEAD
 const renderCustomBarLabel = (props: any) => {
   const { x, y, width, height, value } = props;
   if (value === 0) return null;
@@ -101,41 +80,25 @@ const renderCustomBarLabel = (props: any) => {
   );
 };
 
-=======
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
 export default function Relatorios() {
   const { registros } = useRegistrosContext();
   const { closures, loadClosure } = useMonthlyClosure();
   const { months: historicalMonths } = useHistoricalMonths();
   const formatCurrency = formatCurrencyBRL;
-<<<<<<< HEAD
   
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth().toString());
   const [selectedYear, setSelectedYear] = useState(now.getFullYear().toString());
-
-  const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-  const anos = Array.from({ length: 5 }, (_, i) => (now.getFullYear() - 2 + i).toString());
-
-  const dadosAnuais = useMemo(() => {
-    const mesesAbrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const data = mesesAbrev.map((mes, index) => ({
-      mes,
-      mesIndex: index,
-      entradas: 0,
-      saidas: 0,
-      resultado: 0,
-    }));
-=======
-  const currentYear = new Date().getFullYear();
-  const now = new Date();
   const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 
   const [openClosure, setOpenClosure] = useState<ClosureFull | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
 
-  // Combine auto-derived past months with closures (closure takes precedence)
-  const allMonths = useMemo(() => {
+  const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+  const anos = Array.from({ length: 5 }, (_, i) => (now.getFullYear() - 2 + i).toString());
+
+  // Combine auto-derived past months with closures
+  const allPastMonths = useMemo(() => {
     const map: Record<string, { month: string; totals: any; source: "closure" | "auto" }> = {};
     historicalMonths.forEach((m) => {
       map[m.month] = { month: m.month, totals: m.totals, source: "auto" };
@@ -162,31 +125,44 @@ export default function Relatorios() {
           totals: hist.totals,
           records: hist.records,
           bills: hist.bills,
-        } as ClosureFull);
+        } as any);
         setViewOpen(true);
       }
     }
   };
 
   const dadosAnuais = useMemo(() => {
-    const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-    const data = meses.map((mes, index) => ({ mes, mesIndex: index, entradas: 0, saidas: 0, resultado: 0 }));
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
+    const mesesAbrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const data = mesesAbrev.map((mes, index) => ({
+      mes,
+      mesIndex: index,
+      entradas: 0,
+      saidas: 0,
+      resultado: 0,
+    }));
 
-    // Current month live
+    // Live data for current year
     registros.forEach((r) => {
       const date = new Date(r.data);
       if (date.getFullYear().toString() === selectedYear) {
         const mesIndex = date.getMonth();
         if (r.tipo === "entrada") data[mesIndex].entradas += Number(r.valor) || 0;
         else if (r.tipo === "saida") data[mesIndex].saidas += Number(r.valor) || 0;
-<<<<<<< HEAD
+      }
+    });
+
+    // Merge with archived months for the same year
+    allPastMonths.forEach((m) => {
+      const [y, mo] = m.month.split("-").map(Number);
+      if (y.toString() === selectedYear) {
+        data[mo - 1].entradas = Math.max(data[mo - 1].entradas, Number(m.totals?.entradas || 0));
+        data[mo - 1].saidas = Math.max(data[mo - 1].saidas, Number(m.totals?.saidas || 0));
       }
     });
 
     data.forEach((d) => { d.resultado = d.entradas - d.saidas; });
     return data;
-  }, [registros, selectedYear]);
+  }, [registros, allPastMonths, selectedYear]);
 
   const dadosMensais = useMemo(() => {
     let entradas = 0;
@@ -220,6 +196,15 @@ export default function Relatorios() {
       topCategorias: categoriasArray.slice(0, 5)
     };
   }, [registros, selectedMonth, selectedYear]);
+
+  const closureCategorias = useMemo(() => {
+    if (!openClosure) return [];
+    const map: Record<string, number> = {};
+    (openClosure.records || []).filter((r: any) => r.tipo === "saida").forEach((r: any) => {
+      map[r.categoria] = (map[r.categoria] || 0) + Number(r.valor);
+    });
+    return Object.entries(map).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor);
+  }, [openClosure]);
 
   return (
     <div className="space-y-8 max-w-7xl animate-fade-in">
@@ -281,6 +266,49 @@ export default function Relatorios() {
         </div>
       </div>
 
+      {/* Meses Anteriores (Archive) */}
+      <Card className="bg-card border-border shadow-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Archive className="h-4 w-4" /> Meses Anteriores
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {allPastMonths.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-6 text-center">
+              Nenhum mês anterior com dados arquivados.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {allPastMonths.map((m) => (
+                <button
+                  key={m.month}
+                  onClick={() => handleViewMonth(m)}
+                  className="text-left p-4 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-accent/30 transition-all group"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-semibold text-sm">{formatMonthLabel(m.month)}</span>
+                    <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Arquivado</Badge>
+                  </div>
+                  <div className="space-y-0.5 text-xs">
+                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(m.totals?.entradas || 0))}</span></div>
+                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(m.totals?.saidas || 0))}</span></div>
+                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50 mt-1">
+                      <span>Saldo</span>
+                      <span className={Number(m.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(m.totals?.saldo || 0))}</span>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
+                    <Eye className="h-3 w-3" /> Ver detalhes
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Monthly Summary Cards (for Selected Month) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card className="bg-card border-border">
           <CardContent className="p-5 flex items-center gap-4">
@@ -318,6 +346,7 @@ export default function Relatorios() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Category Table */}
         <Card className="lg:col-span-2 bg-card border-border overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
@@ -362,6 +391,7 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
+        {/* Top Expenses & Distribution */}
         <div className="space-y-6">
           <Card className="bg-card border-border">
             <CardHeader>
@@ -415,113 +445,22 @@ export default function Relatorios() {
         </div>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
+      {/* Annual Evolution */}
+      <Card className="bg-card border-border shadow-sm">
+        <CardHeader className="pb-4">
           <CardTitle className="text-lg flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-primary" />
             Evolução Mensal ({selectedYear})
-=======
-      }
-    });
-    // Past months
-    allMonths.forEach((m) => {
-      const [y, mo] = m.month.split("-").map(Number);
-      if (y === currentYear) {
-        data[mo - 1].entradas = Number(m.totals?.entradas || 0);
-        data[mo - 1].saidas = Number(m.totals?.saidas || 0);
-      }
-    });
-    data.forEach((d) => { d.resultado = d.entradas - d.saidas; });
-    return data;
-  }, [registros, allMonths, currentYear]);
-
-  // Closure detail computed sections
-  const closureCategorias = useMemo(() => {
-    if (!openClosure) return [];
-    const map: Record<string, number> = {};
-    (openClosure.records || []).filter((r: any) => r.tipo === "saida").forEach((r: any) => {
-      map[r.categoria] = (map[r.categoria] || 0) + Number(r.valor);
-    });
-    return Object.entries(map).map(([nome, valor]) => ({ nome, valor })).sort((a, b) => b.valor - a.valor);
-  }, [openClosure]);
-
-  return (
-    <div className="space-y-8 max-w-7xl animate-fade-in">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Relatórios e Análises</h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Histórico mensal automático — meses anteriores aparecem aqui sem precisar de fechamento manual.
-        </p>
-      </div>
-
-      {/* Past months list (auto) */}
-      <Card className="bg-card border-border shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Archive className="h-4 w-4" /> Meses Anteriores
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {allMonths.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum mês anterior com dados. Quando o mês mudar, os registros do mês anterior aparecerão aqui automaticamente.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {allMonths.map((m) => (
-                <button
-                  key={m.month}
-                  onClick={() => handleViewMonth(m)}
-                  className="text-left p-4 rounded-xl border border-border bg-background hover:border-primary/40 hover:bg-accent/30 transition-all group"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-sm">{formatMonthLabel(m.month)}</span>
-                    <Badge variant="outline" className="gap-1 text-xs"><Lock className="h-3 w-3" /> Leitura</Badge>
-                  </div>
-                  <div className="space-y-0.5 text-xs">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Entradas</span><span className="text-income">{formatCurrency(Number(m.totals?.entradas || 0))}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Saídas</span><span className="text-expense">{formatCurrency(Number(m.totals?.saidas || 0))}</span></div>
-                    <div className="flex justify-between font-semibold pt-1 border-t border-border/50 mt-1">
-                      <span>Saldo</span>
-                      <span className={Number(m.totals?.saldo || 0) >= 0 ? "text-income" : "text-expense"}>{formatCurrency(Number(m.totals?.saldo || 0))}</span>
-                    </div>
-                  </div>
-                  <div className="mt-2 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                    <Eye className="h-3 w-3" /> Ver detalhes
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Annual chart */}
-      <Card className="bg-card border-border shadow-sm">
-        <CardHeader className="pb-4">
-          <CardTitle className="text-base font-medium flex items-center justify-between">
-            Evolução Mensal ({currentYear})
-            <span className="text-xs font-normal text-muted-foreground bg-secondary/50 px-2.5 py-1 rounded-full">
-              Inclui meses encerrados
-            </span>
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
           </CardTitle>
         </CardHeader>
         <CardContent className="h-[400px] pt-4 w-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={dadosAnuais} margin={{ top: 20, right: 10, left: 10, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(224 12% 18%)" vertical={false} />
-<<<<<<< HEAD
               <XAxis dataKey="mes" tick={{ fill: "hsl(215 12% 50%)", fontSize: 13 }} axisLine={false} tickLine={false} dy={10} />
               <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$ ${Math.abs(v) >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} dx={-10} />
               <Tooltip content={<CustomAnualTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Bar dataKey="resultado" shape={<Custom3DBar />} label={renderCustomBarLabel} animationBegin={200} animationDuration={1500} />
-=======
-              <XAxis dataKey="mes" tick={{ fill: "hsl(215 12% 50%)", fontSize: 13, fontWeight: 500 }} axisLine={false} tickLine={false} dy={10} />
-              <YAxis tick={{ fill: "hsl(215 12% 50%)", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v) => `R$ ${Math.abs(v) >= 1000 ? (v/1000).toFixed(0) + 'k' : v}`} dx={-10} />
-              <Tooltip content={<CustomAnualTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-              <Bar dataKey="resultado" shape={<Custom3DBar />} animationBegin={200} animationDuration={1500} />
->>>>>>> 74e4bbc36f37ba857380fc3d7e377d78f94dd098
             </BarChart>
           </ResponsiveContainer>
         </CardContent>
