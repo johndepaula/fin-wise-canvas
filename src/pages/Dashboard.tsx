@@ -134,8 +134,7 @@ export default function Dashboard() {
 
   const totalGeralEntradas = registros.filter((r) => r.tipo === "entrada").reduce((s, r) => s + (r.valor || 0), 0);
   const totalGeralSaidas = registros.filter((r) => r.tipo === "saida").reduce((s, r) => s + (r.valor || 0), 0);
-  const saldoEmConta = totalGeralEntradas - totalGeralSaidas;
-  
+  let saldoEmConta = totalGeralEntradas - totalGeralSaidas;
   if (Number.isNaN(saldoEmConta) || !Number.isFinite(saldoEmConta)) {
     saldoEmConta = 0;
   }
