@@ -24,12 +24,30 @@ export function useLifecycle() {
     const startOfPrevMonth = new Date(prevYear, prevMonth, 1).toISOString().split("T")[0];
     const endOfPrevMonth = new Date(prevYear, prevMonth + 1, 0).toISOString().split("T")[0];
     const prevMonthKey = `${prevYear}-${String(prevMonth + 1).padStart(2, "0")}`;
+    const currentMonthKey = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}`;
 
-    // 2. Handle Balance Transition (Once per month)
+    // 2. CLEANUP: Find and remove duplicate bills in the current month
+    const currentMonthBills = bills.filter(b => b.due_date.startsWith(currentMonthKey));
+    const seen = new Map<string, string>(); // account_type -> first_id
+    const duplicateIds: string[] = [];
+
+    currentMonthBills.forEach((b) => {
+      if (seen.has(b.account_type)) {
+        duplicateIds.push(b.id);
+      } else {
+        seen.set(b.account_type, b.id);
+      }
+    });
+
+    if (duplicateIds.length > 0) {
+      await supabase.from("bills").delete().in("id", duplicateIds);
+    }
+
+    // 3. Handle Balance Transition (Once per month)
     const hasBalanceTransition = registros.some(
       (r) =>
         (r.descricao === "Saldo do mês anterior" || r.descricao === "Saldo negativo do mês anterior") &&
-        r.data.startsWith(startOfMonth.slice(0, 7))
+        r.data.startsWith(currentMonthKey)
     );
 
     if (!hasBalanceTransition) {
@@ -54,27 +72,21 @@ export function useLifecycle() {
       }
     }
 
-    // 3. Handle Recurring Bills (Migration/Repair)
-    const currentMonthBills = bills.filter(b => b.due_date >= startOfMonth);
-    
-    // Check previous month bills in live table
-    let prevBillsSource = bills.filter(b => b.due_date >= startOfPrevMonth && b.due_date <= endOfPrevMonth);
-    
-    // If live table is empty (maybe already archived), check closures
+    // 4. Handle Recurring Bills (Migration/Repair)
+    let prevBillsSource = bills.filter(b => b.due_date.startsWith(prevMonthKey));
     if (prevBillsSource.length === 0) {
       const { data: closure } = await supabase.from("monthly_closures").select("bills").eq("month", prevMonthKey).maybeSingle();
       if (closure?.bills) prevBillsSource = closure.bills as any[];
     }
 
-    // RULE: If current month is "incomplete" (0 or 1 bill) while prev month had many
-    if (currentMonthBills.length <= 1 && prevBillsSource.length > 1) {
-      // Clear current month's incomplete bills
-      for (const b of currentMonthBills) {
-        await supabase.from("bills").delete().eq("id", b.id);
-      }
+    const finalCurrentMonthBills = bills.filter(b => b.due_date.startsWith(currentMonthKey) && !duplicateIds.includes(b.id));
 
+    if (finalCurrentMonthBills.length <= 1 && prevBillsSource.length > 1) {
       let billsCloned = 0;
       for (const bill of prevBillsSource) {
+        const alreadyExists = finalCurrentMonthBills.some(b => b.account_type === bill.account_type);
+        if (alreadyExists) continue;
+
         const dueDay = new Date(bill.due_date + "T00:00:00").getDate();
         const newDueDate = new Date(currentYear, currentMonth, dueDay);
         if (newDueDate.getMonth() !== currentMonth) newDueDate.setDate(0);
@@ -91,12 +103,12 @@ export function useLifecycle() {
 
       if (billsCloned > 0) {
         import("@/hooks/use-toast").then(({ toast }) => {
-          toast({ title: "Contas sincronizadas!", description: `${billsCloned} contas recorrentes foram migradas de ${prevMonthKey} para este mês.` });
+          toast({ title: "Contas sincronizadas!", description: `${billsCloned} contas recorrentes foram migradas para este mês sem duplicatas.` });
         });
       }
     }
 
-    // 4. Automated Closure of Previous Month (If not done)
+    // 5. Automated Closure of Previous Month (If not done)
     const { data: existingClosure } = await supabase.from("monthly_closures").select("id").eq("month", prevMonthKey).maybeSingle();
 
     if (!existingClosure) {
@@ -116,8 +128,6 @@ export function useLifecycle() {
         if (billsToClose?.length) await supabase.from("bills").delete().in("id", billsToClose.map(b => b.id));
       }
     }
-
-
   }, [user, registros, bills, loadingRegistros, loadingBills, addRegistro, addBill]);
 
 
