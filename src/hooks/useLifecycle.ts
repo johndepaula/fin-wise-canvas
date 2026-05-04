@@ -43,7 +43,7 @@ export function useLifecycle() {
       await supabase.from("bills").delete().in("id", duplicateIds);
     }
 
-    // 3. Handle Balance Transition (Once per month)
+    // 3. Handle Balance Transition (Once per month) — read from closure or live prev-month data
     const hasBalanceTransition = registros.some(
       (r) =>
         (r.descricao === "Saldo do mês anterior" || r.descricao === "Saldo negativo do mês anterior") &&
@@ -51,24 +51,30 @@ export function useLifecycle() {
     );
 
     if (!hasBalanceTransition) {
-      const prevMonthRegistros = registros.filter(
-        (r) => r.data >= startOfPrevMonth && r.data <= endOfPrevMonth
-      );
+      let prevSaldo = 0;
+      const { data: closure } = await supabase
+        .from("monthly_closures")
+        .select("totals")
+        .eq("month", prevMonthKey)
+        .maybeSingle();
 
-      const prevEntradas = prevMonthRegistros
-        .filter((r) => r.tipo === "entrada")
-        .reduce((sum, r) => sum + r.valor, 0);
-      const prevSaidas = prevMonthRegistros
-        .filter((r) => r.tipo === "saida")
-        .reduce((sum, r) => sum + r.valor, 0);
-      const prevSaldo = prevEntradas - prevSaidas;
+      if (closure?.totals) {
+        prevSaldo = Number((closure.totals as any).saldo) || 0;
+      } else {
+        const { data: prevRecs } = await supabase
+          .from("financial_records")
+          .select("tipo,valor")
+          .gte("data", startOfPrevMonth)
+          .lte("data", endOfPrevMonth);
+        const ent = (prevRecs || []).filter((r: any) => r.tipo === "entrada").reduce((s, r: any) => s + Number(r.valor), 0);
+        const sai = (prevRecs || []).filter((r: any) => r.tipo === "saida").reduce((s, r: any) => s + Number(r.valor), 0);
+        prevSaldo = ent - sai;
+      }
 
       if (prevSaldo > 0) {
         await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: prevSaldo, categoria: "Outros", data: startOfMonth });
       } else if (prevSaldo < 0) {
-        await addRegistro({ tipo: "saida", descricao: "Saldo negativo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
-      } else {
-        await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: 0, categoria: "Outros", data: startOfMonth });
+        await addRegistro({ tipo: "saida", descricao: "Saldo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
       }
     }
 
