@@ -43,12 +43,16 @@ export function useLifecycle() {
       await supabase.from("bills").delete().in("id", duplicateIds);
     }
 
-    // 3. Handle Balance Transition (Once per month) — read from closure or live prev-month data
-    const hasBalanceTransition = registros.some(
-      (r) =>
-        (r.descricao === "Saldo do mês anterior" || r.descricao === "Saldo negativo do mês anterior") &&
-        r.data.startsWith(currentMonthKey)
-    );
+    // 3. Handle Balance Transition (Once per month) — check DB directly to avoid race conditions
+    const { data: existingTransition } = await supabase
+      .from("financial_records")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("descricao", "Saldo do mês anterior")
+      .gte("data", startOfMonth)
+      .limit(1)
+      .maybeSingle();
+    const hasBalanceTransition = !!existingTransition;
 
     if (!hasBalanceTransition) {
       let prevSaldo = 0;
