@@ -433,34 +433,6 @@ export default function Relatorios() {
                 </div>
               </div>
 
-              {closureCategorias.length > 0 && (
-                <div>
-                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                    <TrendingDown className="h-4 w-4 text-expense" />
-                    Saídas por Categoria
-                  </h3>
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/30">
-                          <TableHead className="h-9 text-xs">Categoria</TableHead>
-                          <TableHead className="h-9 text-xs text-right">Total Gasto</TableHead>
-                          <TableHead className="h-9 text-xs text-right">%</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {closureCategorias.map((c) => (
-                          <TableRow key={c.nome} className="h-9">
-                            <TableCell className="py-2 text-xs font-medium">{c.nome}</TableCell>
-                            <TableCell className="py-2 text-xs text-right font-semibold">{formatCurrency(c.valor)}</TableCell>
-                            <TableCell className="py-2 text-xs text-right text-muted-foreground">{c.percentual.toFixed(1)}%</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </DialogContent>
