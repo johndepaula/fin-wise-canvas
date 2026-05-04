@@ -35,10 +35,18 @@ export function useBills() {
     if (error) {
       toast({ title: "Erro ao carregar contas", description: error.message, variant: "destructive" });
     } else {
-      setBills((data || []).map((b) => ({
-        id: b.id, account_type: b.account_type, due_date: b.due_date,
-        amount: Number(b.amount), amount_paid: Number(b.amount_paid), created_at: b.created_at,
-      })));
+      const seen = new Set<string>();
+      const unique: Bill[] = [];
+      for (const b of data || []) {
+        const key = `${b.account_type}|${b.due_date}|${Number(b.amount)}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        unique.push({
+          id: b.id, account_type: b.account_type, due_date: b.due_date,
+          amount: Number(b.amount), amount_paid: Number(b.amount_paid), created_at: b.created_at,
+        });
+      }
+      setBills(unique);
     }
     setLoading(false);
   }, [user]);
@@ -47,6 +55,17 @@ export function useBills() {
 
   const add = useCallback(async (bill: Omit<Bill, "id" | "created_at">) => {
     if (!user) return;
+    // Check for existing duplicate (same user + type + due date + amount)
+    const { data: existing } = await supabase.from("bills").select("*")
+      .eq("user_id", user.id)
+      .eq("account_type", bill.account_type)
+      .eq("due_date", bill.due_date)
+      .eq("amount", bill.amount)
+      .maybeSingle();
+    if (existing) {
+      toast({ title: "Conta já existe", description: "Uma conta idêntica já foi cadastrada.", variant: "destructive" });
+      return;
+    }
     const { data, error } = await supabase.from("bills")
       .insert({ user_id: user.id, ...bill }).select().single();
     if (error) {

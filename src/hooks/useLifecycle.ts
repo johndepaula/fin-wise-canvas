@@ -1,16 +1,25 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useBillsContext } from "@/contexts/BillsContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// Module-level guards to prevent duplicate carry-over across re-renders, multiple hook instances, and rapid re-invocations.
+const carryOverDone = new Set<string>(); // key: `${user_id}:${YYYY-MM}`
+const carryOverInFlight = new Map<string, Promise<void>>();
+const lifecycleRunning = new Set<string>(); // key: user_id — prevents concurrent full-lifecycle runs
+
 export function useLifecycle() {
   const { user } = useAuth();
   const { registros, adicionar: addRegistro, loading: loadingRegistros } = useRegistrosContext();
   const { bills, add: addBill, loading: loadingBills } = useBillsContext();
+  const ranForUserRef = useRef<string | null>(null);
 
   const checkAndTransitionMonth = useCallback(async () => {
     if (!user || loadingRegistros || loadingBills) return;
+    if (lifecycleRunning.has(user.id)) return;
+    lifecycleRunning.add(user.id);
+    try {
 
     const now = new Date();
     const currentMonth = now.getMonth();
@@ -43,33 +52,70 @@ export function useLifecycle() {
       await supabase.from("bills").delete().in("id", duplicateIds);
     }
 
-    // 3. Handle Balance Transition (Once per month)
-    const hasBalanceTransition = registros.some(
-      (r) =>
-        (r.descricao === "Saldo do mês anterior" || r.descricao === "Saldo negativo do mês anterior") &&
-        r.data.startsWith(currentMonthKey)
-    );
+    // 3. Handle Balance Transition (Once per month) — guarded against rapid re-clicks/reloads
+    const carryKey = `${user.id}:${currentMonthKey}`;
+    if (!carryOverDone.has(carryKey)) {
+      let pending = carryOverInFlight.get(carryKey);
+      if (!pending) {
+        pending = (async () => {
+          // DB check first to avoid duplicates across sessions/devices
+          const { data: existingTransition } = await supabase
+            .from("financial_records")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("descricao", "Saldo do mês anterior")
+            .gte("data", startOfMonth)
+            .limit(1)
+            .maybeSingle();
 
-    if (!hasBalanceTransition) {
-      const prevMonthRegistros = registros.filter(
-        (r) => r.data >= startOfPrevMonth && r.data <= endOfPrevMonth
-      );
+          if (existingTransition) return;
 
-      const prevEntradas = prevMonthRegistros
-        .filter((r) => r.tipo === "entrada")
-        .reduce((sum, r) => sum + r.valor, 0);
-      const prevSaidas = prevMonthRegistros
-        .filter((r) => r.tipo === "saida")
-        .reduce((sum, r) => sum + r.valor, 0);
-      const prevSaldo = prevEntradas - prevSaidas;
+          let prevSaldo = 0;
+          const { data: closure } = await supabase
+            .from("monthly_closures")
+            .select("totals")
+            .eq("month", prevMonthKey)
+            .maybeSingle();
 
-      if (prevSaldo > 0) {
-        await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: prevSaldo, categoria: "Outros", data: startOfMonth });
-      } else if (prevSaldo < 0) {
-        await addRegistro({ tipo: "saida", descricao: "Saldo negativo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
-      } else {
-        await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: 0, categoria: "Outros", data: startOfMonth });
+          if (closure?.totals) {
+            prevSaldo = Number((closure.totals as any).saldo) || 0;
+          } else {
+            const { data: prevRecs } = await supabase
+              .from("financial_records")
+              .select("tipo,valor")
+              .gte("data", startOfPrevMonth)
+              .lte("data", endOfPrevMonth);
+            const ent = (prevRecs || []).filter((r: any) => r.tipo === "entrada").reduce((s, r: any) => s + Number(r.valor), 0);
+            const sai = (prevRecs || []).filter((r: any) => r.tipo === "saida").reduce((s, r: any) => s + Number(r.valor), 0);
+            prevSaldo = ent - sai;
+          }
+
+          if (prevSaldo === 0) return;
+
+          // Re-check right before insert (defensive against TOCTOU)
+          const { data: doubleCheck } = await supabase
+            .from("financial_records")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("descricao", "Saldo do mês anterior")
+            .gte("data", startOfMonth)
+            .limit(1)
+            .maybeSingle();
+          if (doubleCheck) return;
+
+          if (prevSaldo > 0) {
+            await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: prevSaldo, categoria: "Outros", data: startOfMonth });
+          } else {
+            await addRegistro({ tipo: "saida", descricao: "Saldo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
+          }
+        })()
+          .finally(() => {
+            carryOverInFlight.delete(carryKey);
+            carryOverDone.add(carryKey);
+          });
+        carryOverInFlight.set(carryKey, pending);
       }
+      await pending;
     }
 
     // 4. Handle Recurring Bills (Migration/Repair)
@@ -127,6 +173,9 @@ export function useLifecycle() {
         if (recordsToClose?.length) await supabase.from("financial_records").delete().in("id", recordsToClose.map(r => r.id));
         if (billsToClose?.length) await supabase.from("bills").delete().in("id", billsToClose.map(b => b.id));
       }
+    }
+    } finally {
+      lifecycleRunning.delete(user.id);
     }
   }, [user, registros, bills, loadingRegistros, loadingBills, addRegistro, addBill]);
 
