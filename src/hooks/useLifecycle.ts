@@ -52,43 +52,70 @@ export function useLifecycle() {
       await supabase.from("bills").delete().in("id", duplicateIds);
     }
 
-    // 3. Handle Balance Transition (Once per month) — check DB directly to avoid race conditions
-    const { data: existingTransition } = await supabase
-      .from("financial_records")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("descricao", "Saldo do mês anterior")
-      .gte("data", startOfMonth)
-      .limit(1)
-      .maybeSingle();
-    const hasBalanceTransition = !!existingTransition;
+    // 3. Handle Balance Transition (Once per month) — guarded against rapid re-clicks/reloads
+    const carryKey = `${user.id}:${currentMonthKey}`;
+    if (!carryOverDone.has(carryKey)) {
+      let pending = carryOverInFlight.get(carryKey);
+      if (!pending) {
+        pending = (async () => {
+          // DB check first to avoid duplicates across sessions/devices
+          const { data: existingTransition } = await supabase
+            .from("financial_records")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("descricao", "Saldo do mês anterior")
+            .gte("data", startOfMonth)
+            .limit(1)
+            .maybeSingle();
 
-    if (!hasBalanceTransition) {
-      let prevSaldo = 0;
-      const { data: closure } = await supabase
-        .from("monthly_closures")
-        .select("totals")
-        .eq("month", prevMonthKey)
-        .maybeSingle();
+          if (existingTransition) return;
 
-      if (closure?.totals) {
-        prevSaldo = Number((closure.totals as any).saldo) || 0;
-      } else {
-        const { data: prevRecs } = await supabase
-          .from("financial_records")
-          .select("tipo,valor")
-          .gte("data", startOfPrevMonth)
-          .lte("data", endOfPrevMonth);
-        const ent = (prevRecs || []).filter((r: any) => r.tipo === "entrada").reduce((s, r: any) => s + Number(r.valor), 0);
-        const sai = (prevRecs || []).filter((r: any) => r.tipo === "saida").reduce((s, r: any) => s + Number(r.valor), 0);
-        prevSaldo = ent - sai;
+          let prevSaldo = 0;
+          const { data: closure } = await supabase
+            .from("monthly_closures")
+            .select("totals")
+            .eq("month", prevMonthKey)
+            .maybeSingle();
+
+          if (closure?.totals) {
+            prevSaldo = Number((closure.totals as any).saldo) || 0;
+          } else {
+            const { data: prevRecs } = await supabase
+              .from("financial_records")
+              .select("tipo,valor")
+              .gte("data", startOfPrevMonth)
+              .lte("data", endOfPrevMonth);
+            const ent = (prevRecs || []).filter((r: any) => r.tipo === "entrada").reduce((s, r: any) => s + Number(r.valor), 0);
+            const sai = (prevRecs || []).filter((r: any) => r.tipo === "saida").reduce((s, r: any) => s + Number(r.valor), 0);
+            prevSaldo = ent - sai;
+          }
+
+          if (prevSaldo === 0) return;
+
+          // Re-check right before insert (defensive against TOCTOU)
+          const { data: doubleCheck } = await supabase
+            .from("financial_records")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("descricao", "Saldo do mês anterior")
+            .gte("data", startOfMonth)
+            .limit(1)
+            .maybeSingle();
+          if (doubleCheck) return;
+
+          if (prevSaldo > 0) {
+            await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: prevSaldo, categoria: "Outros", data: startOfMonth });
+          } else {
+            await addRegistro({ tipo: "saida", descricao: "Saldo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
+          }
+        })()
+          .finally(() => {
+            carryOverInFlight.delete(carryKey);
+            carryOverDone.add(carryKey);
+          });
+        carryOverInFlight.set(carryKey, pending);
       }
-
-      if (prevSaldo > 0) {
-        await addRegistro({ tipo: "entrada", descricao: "Saldo do mês anterior", valor: prevSaldo, categoria: "Outros", data: startOfMonth });
-      } else if (prevSaldo < 0) {
-        await addRegistro({ tipo: "saida", descricao: "Saldo do mês anterior", valor: Math.abs(prevSaldo), categoria: "Outros", data: startOfMonth });
-      }
+      await pending;
     }
 
     // 4. Handle Recurring Bills (Migration/Repair)
