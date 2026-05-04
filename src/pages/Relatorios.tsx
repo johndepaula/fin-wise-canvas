@@ -326,43 +326,6 @@ export default function Relatorios() {
         </CardContent>
       </Card>
 
-      {/* Monthly Summary Cards (for Selected Month) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="bg-card border-border">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-income/10 flex items-center justify-center">
-              <ArrowUpCircle className="h-6 w-6 text-income" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-medium">Entradas no Mês</p>
-              <p className="text-xl font-bold text-income">{formatCurrency(dadosMensais.entradas)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-full bg-expense/10 flex items-center justify-center">
-              <ArrowDownCircle className="h-6 w-6 text-expense" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-medium">Saídas no Mês</p>
-              <p className="text-xl font-bold text-expense">{formatCurrency(dadosMensais.saidas)}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-card border-border">
-          <CardContent className="p-5 flex items-center gap-4">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${dadosMensais.saldo >= 0 ? 'bg-blue-500/10' : 'bg-expense/10'}`}>
-              <Wallet className={`h-6 w-6 ${dadosMensais.saldo >= 0 ? 'text-blue-500' : 'text-expense'}`} />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground uppercase font-medium">Saldo Final</p>
-              <p className={`text-xl font-bold ${dadosMensais.saldo >= 0 ? 'text-blue-500' : 'text-expense'}`}>{formatCurrency(dadosMensais.saldo)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Category Table */}
         <Card className="lg:col-span-2 bg-card border-border overflow-hidden">
