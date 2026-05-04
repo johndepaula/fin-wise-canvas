@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { FileText, BarChart3, Download, Calendar, ArrowUpCircle, ArrowDownCircle, Wallet, TrendingDown, Archive, Eye, Lock } from "lucide-react";
+import { FileText, BarChart3, Download, Calendar, ArrowUpCircle, ArrowDownCircle, Wallet, TrendingDown, Archive, Eye, Lock, Search, X, Bot, MessageSquare, Sparkles } from "lucide-react";
 
 const PIE_COLORS = [
   "#2DD4BF", "#22D3EE", "#818CF8", "#C084FC", "#F472B6",
@@ -96,9 +96,18 @@ export default function Relatorios() {
 
   const [openClosure, setOpenClosure] = useState<ClosureFull | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [chatSearch, setChatSearch] = useState("");
+  const [isChatActive, setIsChatActive] = useState(false);
 
   const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
   const anos = Array.from({ length: 5 }, (_, i) => (now.getFullYear() - 2 + i).toString());
+
+  const monthToNum: Record<string, number> = {
+    "janeiro": 1, "fevereiro": 2, "março": 3, "abril": 4, "maio": 5, "junho": 6,
+    "julho": 7, "agosto": 8, "setembro": 9, "outubro": 10, "novembro": 11, "dezembro": 12
+  };
 
   // Combine auto-derived past months with closures
   const allPastMonths = useMemo(() => {
@@ -114,10 +123,15 @@ export default function Relatorios() {
       .sort((a, b) => b.month.localeCompare(a.month));
   }, [historicalMonths, closures, currentMonthKey]);
 
-  const handleViewMonth = async (m: { month: string; source: "closure" | "auto" }) => {
+  const handleViewMonth = async (m: { month: string; source: "closure" | "auto" }, startChat = false) => {
     if (m.source === "closure") {
       const c = await loadClosure(m.month);
-      if (c) { setOpenClosure(c); setViewOpen(true); }
+      if (c) { 
+        setOpenClosure(c); 
+        setViewOpen(true); 
+        setIsChatActive(startChat);
+        setChatSearch("");
+      }
     } else {
       const hist = historicalMonths.find((h) => h.month === m.month);
       if (hist) {
@@ -130,9 +144,72 @@ export default function Relatorios() {
           bills: hist.bills,
         } as any);
         setViewOpen(true);
+        setIsChatActive(startChat);
+        setChatSearch("");
       }
     }
   };
+
+  const handleGlobalSearch = (val: string) => {
+    setSearchQuery(val);
+    const lowerQ = val.toLowerCase();
+    
+    const monthMatch = lowerQ.match(/(?:abrir|ver|mês de|mês)?\s*(janeiro|fevereiro|março|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/i);
+    
+    if (monthMatch) {
+      const monthName = monthMatch[1].toLowerCase();
+      const monthNum = monthToNum[monthName];
+      if (monthNum) {
+        const found = allPastMonths.find(m => {
+          const [_, mm] = m.month.split("-").map(Number);
+          return mm === monthNum;
+        });
+        
+        if (found) {
+          handleViewMonth(found, true);
+          setSearchQuery("");
+          setShowSearch(false);
+        }
+      }
+    }
+  };
+
+  const filteredPastMonths = useMemo(() => {
+    if (!searchQuery) return allPastMonths;
+    const q = searchQuery.toLowerCase();
+    
+    return allPastMonths.filter(m => {
+      const label = formatMonthLabel(m.month).toLowerCase();
+      if (label.includes(q)) return true;
+      
+      const hist = historicalMonths.find(h => h.month === m.month);
+      if (hist) {
+        return hist.records.some(r => {
+          const dateStr = (r.data || "").slice(0, 10).split("-").reverse().join("/");
+          return r.categoria.toLowerCase().includes(q) || 
+            r.descricao.toLowerCase().includes(q) ||
+            r.tipo.toLowerCase().includes(q) ||
+            dateStr.includes(q) ||
+            r.data.includes(q);
+        });
+      }
+      return false;
+    });
+  }, [allPastMonths, searchQuery, historicalMonths]);
+
+  const filteredRecords = useMemo(() => {
+    if (!openClosure) return [];
+    if (!chatSearch) return openClosure.records || [];
+    const q = chatSearch.toLowerCase();
+    return (openClosure.records || []).filter((r: any) => {
+      const dateStr = (r.data || "").slice(0, 10).split("-").reverse().join("/");
+      return r.categoria.toLowerCase().includes(q) ||
+        r.descricao.toLowerCase().includes(q) ||
+        r.tipo.toLowerCase().includes(q) ||
+        dateStr.includes(q) ||
+        r.data.includes(q)
+    });
+  }, [openClosure, chatSearch]);
 
   const dadosAnuais = useMemo(() => {
     const mesesAbrev = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -285,20 +362,47 @@ export default function Relatorios() {
       </div>
 
       {/* Meses Anteriores (Archive) */}
-      <Card className="bg-card border-border shadow-sm">
+      <Card className="bg-card border-border shadow-sm overflow-hidden">
         <CardHeader className="pb-4">
-          <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Archive className="h-4 w-4" /> Meses Anteriores
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-medium flex items-center gap-2">
+              <Archive className="h-4 w-4" /> Meses Anteriores
+            </CardTitle>
+            <div className="flex items-center gap-2">
+              {showSearch ? (
+                <div className="flex items-center gap-2 animate-in slide-in-from-right-4">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="Pesquisar..."
+                      className="bg-background border border-border rounded-full py-1.5 pl-8 pr-4 text-xs w-[180px] sm:w-[240px] focus:outline-none focus:ring-1 focus:ring-primary transition-all"
+                      value={searchQuery}
+                      onChange={(e) => handleGlobalSearch(e.target.value)}
+                    />
+                  </div>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full" onClick={() => { setShowSearch(false); setSearchQuery(""); }}>
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <Button variant="outline" size="sm" className="gap-2 h-8 rounded-full border-primary/20 hover:border-primary/50" onClick={() => setShowSearch(true)}>
+                  <Search className="h-3.5 w-3.5" />
+                  Pesquisar
+                </Button>
+              )}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {allPastMonths.length === 0 ? (
+          {filteredPastMonths.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Nenhum mês anterior com dados arquivados.
+              {searchQuery ? "Nenhum resultado encontrado para esta pesquisa." : "Nenhum mês anterior com dados arquivados."}
             </p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {allPastMonths.map((m) => (
+              {filteredPastMonths.map((m) => (
                 <button
                   key={m.month}
                   onClick={() => handleViewMonth(m)}
@@ -500,6 +604,39 @@ export default function Relatorios() {
 
           {openClosure && (
             <div className="space-y-5">
+              <div className="bg-accent/10 p-4 rounded-xl border border-primary/10 animate-in fade-in slide-in-from-top-2">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-9 w-9 rounded-full bg-primary/20 flex items-center justify-center shadow-inner">
+                    <Bot className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-primary/80">Assistente Inteligente</p>
+                    <p className="text-xs text-muted-foreground">O que você deseja ver em {formatMonthLabel(openClosure.month)}?</p>
+                  </div>
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                    <Sparkles className="h-4 w-4 text-primary/50 group-focus-within:text-primary transition-colors" />
+                  </div>
+                  <input 
+                    type="text"
+                    className="w-full bg-background/50 border border-border rounded-xl py-2.5 pl-10 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/50 transition-all shadow-sm"
+                    placeholder="Ex: transporte, alimentação, uber, entrada, saida..."
+                    value={chatSearch}
+                    onChange={(e) => setChatSearch(e.target.value)}
+                    autoFocus
+                  />
+                  {chatSearch && (
+                    <button 
+                      onClick={() => setChatSearch("")}
+                      className="absolute inset-y-0 right-3 flex items-center text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div className="p-4 bg-income/10 rounded-xl border border-income/20">
                   <p className="text-xs text-muted-foreground uppercase mb-1">Entradas</p>
@@ -525,7 +662,7 @@ export default function Relatorios() {
                       <TableRow><TableHead>Data</TableHead><TableHead>Tipo</TableHead><TableHead>Categoria</TableHead><TableHead>Descrição</TableHead><TableHead className="text-right">Valor</TableHead></TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(openClosure.records || []).map((r: any) => (
+                      {filteredRecords.map((r: any) => (
                         <TableRow key={r.id}>
                           <TableCell className="text-xs">{(r.data || "").slice(0, 10).split("-").reverse().join("/")}</TableCell>
                           <TableCell><Badge variant="outline" className={`text-xs ${r.tipo === "entrada" ? "text-income border-income/30" : "text-expense border-expense/30"}`}>{r.tipo}</Badge></TableCell>
@@ -534,8 +671,10 @@ export default function Relatorios() {
                           <TableCell className={`text-xs text-right tabular-nums ${r.tipo === "entrada" ? "text-income" : "text-expense"}`}>{formatCurrency(Number(r.valor))}</TableCell>
                         </TableRow>
                       ))}
-                      {(!openClosure.records || openClosure.records.length === 0) && (
-                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-4">Sem registros</TableCell></TableRow>
+                      {filteredRecords.length === 0 && (
+                        <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground text-sm py-8">
+                          {chatSearch ? `Nenhum registro encontrado para "${chatSearch}"` : "Sem registros"}
+                        </TableCell></TableRow>
                       )}
                     </TableBody>
                   </Table>
