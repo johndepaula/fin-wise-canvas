@@ -1,16 +1,25 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRegistrosContext } from "@/contexts/RegistrosContext";
 import { useBillsContext } from "@/contexts/BillsContext";
 import { supabase } from "@/integrations/supabase/client";
 
+// Module-level guards to prevent duplicate carry-over across re-renders, multiple hook instances, and rapid re-invocations.
+const carryOverDone = new Set<string>(); // key: `${user_id}:${YYYY-MM}`
+const carryOverInFlight = new Map<string, Promise<void>>();
+const lifecycleRunning = new Set<string>(); // key: user_id — prevents concurrent full-lifecycle runs
+
 export function useLifecycle() {
   const { user } = useAuth();
   const { registros, adicionar: addRegistro, loading: loadingRegistros } = useRegistrosContext();
   const { bills, add: addBill, loading: loadingBills } = useBillsContext();
+  const ranForUserRef = useRef<string | null>(null);
 
   const checkAndTransitionMonth = useCallback(async () => {
     if (!user || loadingRegistros || loadingBills) return;
+    if (lifecycleRunning.has(user.id)) return;
+    lifecycleRunning.add(user.id);
+    try {
 
     const now = new Date();
     const currentMonth = now.getMonth();
