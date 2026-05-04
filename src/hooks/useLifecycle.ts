@@ -174,6 +174,9 @@ export function useLifecycle() {
         if (billsToClose?.length) await supabase.from("bills").delete().in("id", billsToClose.map(b => b.id));
       }
     }
+    } finally {
+      lifecycleRunning.delete(user.id);
+    }
   }, [user, registros, bills, loadingRegistros, loadingBills, addRegistro, addBill]);
 
 
