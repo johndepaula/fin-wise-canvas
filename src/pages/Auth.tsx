@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Loader2, Mail } from "lucide-react";
 
 export default function Auth() {
@@ -108,8 +109,7 @@ export default function Auth() {
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Senha</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   required
                   minLength={6}
                   placeholder="••••••••"
