@@ -11,12 +11,14 @@ import { Loader2, Mail } from "lucide-react";
 
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
+  const [isReset, setIsReset] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [searchParams] = useSearchParams();
   const [referralCode, setReferralCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
+  const [showResetVerification, setShowResetVerification] = useState(false);
 
   useEffect(() => {
     const ref = searchParams.get("ref");
@@ -30,7 +32,16 @@ export default function Auth() {
     e.preventDefault();
     setLoading(true);
 
-    if (isLogin) {
+    if (isReset) {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + "/perfil",
+      });
+      if (error) {
+        toast({ title: "Erro ao recuperar senha", description: error.message, variant: "destructive" });
+      } else {
+        setShowResetVerification(true);
+      }
+    } else if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
         toast({ title: "Erro ao entrar", description: error.message, variant: "destructive" });
@@ -54,6 +65,29 @@ export default function Auth() {
     }
     setLoading(false);
   };
+
+  if (showResetVerification) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-sm animate-fade-in-up">
+          <Card className="bg-card border-border">
+            <CardContent className="p-8 text-center">
+              <div className="mx-auto mb-4 h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Mail className="h-7 w-7 text-primary" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Verifique seu email</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Enviamos um link de recuperação para <strong className="text-foreground">{email}</strong>. Verifique sua caixa de entrada e clique no link para redefinir sua senha.
+              </p>
+              <Button variant="outline" className="w-full" onClick={() => { setShowResetVerification(false); setIsReset(false); setIsLogin(true); }}>
+                Voltar para o login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (showVerification) {
     return (
@@ -90,9 +124,15 @@ export default function Auth() {
                 className="login-logo-animation h-16 w-auto object-contain"
               />
             </div>
-            <h2 className="text-lg font-semibold mb-1">{isLogin ? "Entrar" : "Criar conta"}</h2>
+            <h2 className="text-lg font-semibold mb-1">
+              {isReset ? "Recuperar senha" : isLogin ? "Entrar" : "Criar conta"}
+            </h2>
             <p className="text-muted-foreground text-sm mb-6">
-              {isLogin ? "Acesse sua conta para continuar" : "Preencha os dados para se cadastrar"}
+              {isReset
+                ? "Digite seu email para receber um link de recuperação"
+                : isLogin
+                ? "Acesse sua conta para continuar"
+                : "Preencha os dados para se cadastrar"}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -107,19 +147,21 @@ export default function Auth() {
                   className="bg-background border-border mt-1"
                 />
               </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Senha</Label>
-                <PasswordInput
-                  required
-                  minLength={6}
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-background border-border mt-1"
-                />
-              </div>
+              {!isReset && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Senha</Label>
+                  <PasswordInput
+                    required
+                    minLength={6}
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-background border-border mt-1"
+                  />
+                </div>
+              )}
               
-              {!isLogin && (
+              {!isLogin && !isReset && (
                 <div className="animate-fade-in-up">
                   <Label className="text-xs text-muted-foreground">Código de indicação (opcional)</Label>
                   <Input
@@ -137,19 +179,49 @@ export default function Auth() {
 
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                {isLogin ? "Entrar" : "Criar conta"}
+                {isReset ? "Enviar link" : isLogin ? "Entrar" : "Criar conta"}
               </Button>
             </form>
 
             <p className="text-center text-sm text-muted-foreground mt-4">
-              {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
-              <button
-                type="button"
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-primary hover:underline font-medium"
-              >
-                {isLogin ? "Cadastre-se" : "Entrar"}
-              </button>
+              {isReset ? (
+                <button
+                  type="button"
+                  onClick={() => setIsReset(false)}
+                  className="text-primary hover:underline font-medium"
+                >
+                  Voltar para o login
+                </button>
+              ) : isLogin ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => setIsReset(true)}
+                    className="text-primary hover:underline font-medium block w-full mb-3"
+                  >
+                    Esqueceu sua senha?
+                  </button>
+                  Não tem conta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(false)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Cadastre-se
+                  </button>
+                </>
+              ) : (
+                <>
+                  Já tem conta?{" "}
+                  <button
+                    type="button"
+                    onClick={() => setIsLogin(true)}
+                    className="text-primary hover:underline font-medium"
+                  >
+                    Entrar
+                  </button>
+                </>
+              )}
             </p>
           </CardContent>
         </Card>

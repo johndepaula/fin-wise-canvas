@@ -8,6 +8,9 @@ import { LogOut, Mail, Camera, Save, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+import { PasswordInput } from "@/components/ui/password-input";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Perfil() {
   const { user, signOut } = useAuth();
@@ -19,6 +22,9 @@ export default function Perfil() {
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -65,6 +71,25 @@ export default function Perfil() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      toast({ title: "As senhas não coincidem", variant: "destructive" });
+      return;
+    }
+    
+    setIsUpdatingPassword(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    
+    if (error) {
+      toast({ title: "Erro ao atualizar senha", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Senha atualizada com sucesso!" });
+      setNewPassword("");
+      setConfirmPassword("");
+    }
+    setIsUpdatingPassword(false);
   };
 
   return (
@@ -117,20 +142,52 @@ export default function Perfil() {
                 <p className="text-sm">{email}</p>
               </div>
             </div>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full gap-2 mt-4"
+            >
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isSaving ? "Salvando..." : "Salvar Alterações de Perfil"}
+            </Button>
+          </div>
+
+          <Separator className="bg-border/50" />
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium">Alterar Senha</h3>
+            <div>
+              <Label className="text-xs text-muted-foreground">Nova Senha</Label>
+              <PasswordInput
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="••••••••"
+                className="bg-background border-border mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Confirmar Nova Senha</Label>
+              <PasswordInput
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="bg-background border-border mt-1"
+              />
+            </div>
+            <Button
+              onClick={handleUpdatePassword}
+              disabled={isUpdatingPassword || !newPassword || !confirmPassword}
+              className="w-full gap-2"
+              variant="secondary"
+            >
+              {isUpdatingPassword ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              {isUpdatingPassword ? "Atualizando..." : "Atualizar Senha"}
+            </Button>
           </div>
 
           <Separator className="bg-border/50" />
 
           <div className="space-y-3">
-            <Button
-              onClick={handleSave}
-              disabled={isSaving}
-              className="w-full gap-2"
-            >
-              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              {isSaving ? "Salvando..." : "Salvar Alterações"}
-            </Button>
-
             <Button
               variant="outline"
               className="w-full gap-2 text-muted-foreground hover:text-foreground"
